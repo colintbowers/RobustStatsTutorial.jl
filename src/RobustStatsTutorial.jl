@@ -1,5 +1,9 @@
 module RobustStatsTutorial
+#--------------------------------------------
+# SOURCE CODE FOR ROBUST STATISTICS TUTORIAL
+#--------------------------------------------
 
-# package code goes here
+
+
 
 end # module
