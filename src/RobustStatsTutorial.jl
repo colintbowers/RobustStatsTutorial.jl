@@ -13,14 +13,46 @@ module RobustStatsTutorial
 #Show how fat-tails in unconditional risky asset returns can be duplicated using a conditionally Normal model, i.e. heteroskedasticity in Normal sequence
 #Something to do with estimating first moment of risky asset returns (?)
 #Move onto OLS model for risky asset returns
+#Compare least squares estimated forecast model for risky asset returns with robust loss estimation method
+#Also compare to case where returns are standardised for volatility first
+#Might need to compare to other robust methods of estimation too, ie ridge regression, lasso (? not robust...)
 
 
-*A demonstration that Normality is an inappropriate assumption for the *unconditional* distribution of stock returns
-*A demonstration of how a simple estimator everyone is familiar with, like the sample mean, is seriously sub-optimal when data is leptokurtic, and a brief introduction to robust statistics as a better method of estimation
-    *Move on to showing how OLS (depending on audience, might quickly sidetrack into how least squares is an equivalent assumption to Normality via the equivalence of OLS and maximum likelihood with Normality assumption) is suboptimal when residuals are leptokurtic. Can use simulated data first, and then move onto using real-world stock return data.
-   *Demonstrate other methods of estimating the parameters of a linear model that outperform OLS when the residuals are leptokurtic
-    *Depending on timing, I could now move on to discussing conditional Normality of stock returns, i.e. how daily returns can be modelled as Normal if you can model how variance changes from day to day (potentially mention the equivalence between a heteroskedastic sequence of Normal random variables and an unconditional leptokurtic distribution). I can show a neat trick here how if you estimate daily variance using one of the neat tricks from high frequency estimation (I don't need to go into too much detail on how this is done if it will bore the audience), then you can standardise daily returns by these daily variance estimates and the resulting sequence is astonishingly close to iid standard Normal, ie N(0, 1).
-   *This can lead into the point that another modelling trick if you want to use OLS is to appropriately standardise your data first, although there are some real statistical traps here, particularly if you believe volatility has predictive power for returns.
+#Load relevant modules
+using Base.Dates, Compose, Gadfly, StatsBase, KernelDensity, Distributions
+
+#Fixed output directory based on Linux OS. Will need to be adjusted for Windows or Mac users.
+const outputDir = "/home/"*ENV["USER"]*"/robust_stats_tutorial_output/"::ASCIIString
+
+#Fixed theme override for all plots
+const defaultThemeOverride = Theme(key_title_font_size=14pt, key_label_font_size=14pt, minor_label_font_size=14pt, major_label_font_size=17pt, key_title_font_size=17pt)::Theme
+
+
+#Create output directory
+!isdir(outputDir) && mkdir(outputDir)
+
+#Include other module files
+include("common.jl")
+
+#--------------------------------------------
+# EXAMPLE WITH t-DISTRIBUTION
+#--------------------------------------------
+function t_dist_simple_example()
+    numObs = 20 #Number of observations to use in this subsection
+    tDist = TDist(2) #Initiate t-distribution with 2 degrees of freedom
+    srand(78) #Specify a range that results in a good dataset for demonstrating the point (yes I mined this from the first 100 integers)
+    tData = rand(tDist, numObs) #Simulate iid from t-distribution
+    tDataSort = sort(tData) #Sort the data
+    tDataMean = mean(tData) #Get sample mean
+    p = 0.2 #Set a trimming proportion
+    tDataTrimMean = tmean(tDataSort, p, sorted=true) #Get trimmed mean
+    (numLower, numUpper) = tmean_num_cut(tDataSort, p/2, p/2) #Get number of observations cut below and above
+    yLower = mean(tDataSort[numLower:numLower+1]) #Get the midpoint of the last lower cut observation and the first lower kept observation
+    yUpper = mean(tDataSort[end-numUpper:end-numUpper+1]) #Get the midpoint of the last upper kept observation and the first upper cut observation
+    dataPlot1 = plot(x=collect(1:numObs), y=tData, yintercept=[yLower, yUpper], Geom.point, Geom.hline, defaultThemeOverride)
+    draw_local(dataPlot1, "t_Dist_Data_With_Trim_Cutoff", dirPath=outputDir, fileType=:svg)
+end
+
 
 
 
