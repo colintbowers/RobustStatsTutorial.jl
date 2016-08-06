@@ -1,0 +1,245 @@
+\documentclass[12pt,a4paper]{amsart}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsbsy}
+\usepackage{amsmath}
+\usepackage{accents}
+\usepackage{array}
+\usepackage{mathrsfs}
+\usepackage{graphicx}
+\usepackage{color}
+\usepackage{units}
+\usepackage{longtable}
+\usepackage{caption}  
+\PassOptionsToPackage{hyphens}{url}\usepackage{hyperref}
+\usepackage[titletoc,title]{appendix}
+\usepackage{xcolor}
+\hypersetup{
+    colorlinks,
+    linkcolor={red!50!black},
+    citecolor={blue!50!black},
+    urlcolor={blue!80!black}
+}
+
+
+
+
+
+%-------------------- GET PROPER LAELS AND REFERENCING FOR DESCRIPTION LISTS ----------------------
+\makeatletter
+\newcommand{\labitem}[2]{%
+\def\@itemlabel{\textbf{#1}}
+\item
+\def\@currentlabel{#1}\label{#2}}
+\makeatother
+
+
+%-------------------- SOME USEFUL DIMENSION SETTING FOR TALES --------------------------------
+\setlength{\extrarowheight}{0.2cm}
+\setlength{\arraycolsep}{0.08cm}
+
+%-------------------- THEOREM/PROPOSITION COMMANDS -----------------------
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{assumption}{Assumptions}
+
+\renewenvironment{proof}[1][Proof]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+\newenvironment{definition}[1][Definition]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+\newenvironment{example}[1][Example]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+\newenvironment{remark}[1][Remark]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+
+%----------------- STANDARD COMMANDS -------------------------------------
+
+\renewcommand{\a}{\alpha}						
+\renewcommand{\b}{\beta}
+\renewcommand{\c}{\xi}
+\renewcommand{\d}{\delta}						
+\newcommand{\e}{\epsilon}
+\newcommand{\f}{\phi}
+\newcommand{\g}{\gamma}
+\newcommand{\h}{\eta}
+\renewcommand{\i}{\iota}					
+\renewcommand{\j}{\varphi}
+\renewcommand{\k}{\kappa}
+\renewcommand{\l}{\lambda}					
+\newcommand{\m}{\mu}
+\newcommand{\n}{\nu}
+\newcommand{\p}{\pi}
+\renewcommand{\r}{\rho}
+\newcommand{\s}{\sigma}							
+\newcommand{\q}{\theta}
+\renewcommand{\t}{\tau}	
+\renewcommand{\u}{\upsilon}							
+\newcommand{\w}{\omega}
+\newcommand{\x}{\chi}
+\newcommand{\y}{\psi}
+\newcommand{\z}{\zeta}
+\newcommand{\D}{\Delta}
+\newcommand{\F}{\Phi}
+\newcommand{\G}{\Gamma}
+\renewcommand{\L}{\Lambda}
+\newcommand{\Q}{\Theta}
+\renewcommand{\S}{\Sigma}
+\newcommand{\W}{\Omega}
+\newcommand{\Y}{\Psi}
+\newcommand{\bgtilde}[1]{\tilde{\bg #1}}					%overset tilde bolded little greek letter
+\newcommand{\bghat}[1]{\hat{\bg #1}}						%overset hat bolded little greek letter
+\newcommand{\btilde}[1]{\tilde{\bm #1}}					%overset tilde on bolded letter
+\newcommand{\bhat}[1]{\hat{\bm #1}}						%overset hat on bolded letter
+\newcommand{\ds}{\displaystyle}							%force display maths formatting on inline equation
+\renewcommand{\bf}{\textbf}								%bold font in text
+\newcommand{\bm}{\mathbf}								%bold font in maths
+\newcommand{\bg}{\boldsymbol}							%bold font in maths for small greek letters
+\newcommand{\tf}{\textrm}								%text font in maths
+\newcommand{\Def}[1]{\bf{Definition (#1):}}				%generic "definition" macro
+\newcommand{\dd}[1]{\frac{\partial}{\partial #1}}		%Used for taking partial derivatives
+\newcommand{\ddt}[1]{\frac{\partial^2}{\partial {#1}^2}}	%Used for taking second partial derivative
+\newcommand{\dsqd}[1]{\frac{\partial^2}{\partial #1}}	%Used for taking second partial derivatives
+\newcommand{\independent}{\protect\mathpalette{\protect\independenT}{\perp}}	%independence symbol
+\def\independenT#1#2{\mathrel{\rlap{$#1#2$}\mkern2mu{#1#2}}}				%independence symbol (cont'd)
+\newcommand{\cov}{\textrm{cov}}							%covariance
+\newcommand{\Acov}{\textrm{Acov}}						%aymptotic covariance
+\renewcommand{\skew}{\textrm{skew}}						%skewness
+\newcommand{\kurt}{\textrm{kurt}}						%kurtosis
+\newcommand{\plim}{\textrm{plim}}						%probability limit
+\newcommand{\as}{\textrm{a.s.}}							%almost surely
+\newcommand{\ms}{\textrm{m.s.}}							%mean square
+\newcommand{\ConT}{\overset{T \rightarrow \infty}{\xrightarrow{\hspace*{0.75cm}}}} %converges T goes to infinity
+\newcommand{\ConN}{\overset{N \rightarrow \infty}{\xrightarrow{\hspace*{0.75cm}}}} %converges N goes to infinity
+\newcommand{\ConP}{\overset{\P}{\longrightarrow}}		%converges in probability
+\newcommand{\ConAS}{\overset{\as}{\longrightarrow}}		%converges almost surely
+\newcommand{\ConMS}{\overset{\ms}{\longrightarrow}}		%converges in mean square
+\newcommand{\ConD}{\overset{\tf{d}}{\longrightarrow}}	%converges in distribution
+\newcommand{\ConLOne}{\overset{\mathcal{L}_1}{\longrightarrow}}		%converges in L1
+\newcommand{\ConLTwo}{\overset{\mathcal{L}_2}{\longrightarrow}}	%converges in L1
+\newcommand{\WLLN}[3]{\lim_{#1} \P \left( #2 - #3 > \e \right) < \d, \forall \e, \d > 0}	%Denotes a weak law of large numbers
+\newcommand{\SLLN}[3]{\P \left( \lim_{#1} #2 = #3 \right) = 1}	%Denotes a strong law of large numbers
+\newcommand{\limN}{\lim_{N \rightarrow \infty}}			%A common limit
+\newcommand{\limD}{\lim_{\D \rightarrow 0}}				%A common limit
+\newcommand{\limh}{\lim_{h \rightarrow \infty}}			%A common limit
+\newcommand{\ADis}{\overset{\tf{a}}{\backsim}}			%asymptotically distributed as
+\newcommand{\iidDis}{\overset{iid}{\backsim}}           %iid distributed as
+\newcommand{\N}{\mathcal{N}}							%normal distribution "N"
+\newcommand{\norm}[1]{\left|\left| #1 \right|\right|}		%norm
+\newcommand{\abs}[1]{\left| #1 \right|}				 	%absolute value
+\newcommand{\tran}{\mathsf{T}}							%transpose
+\newcommand{\tr}{\mathrm{tr}}							%trace
+\newcommand{\adj}{\mathrm{adj}}							%adjoint (of a matrix)
+\newcommand{\sign}{\mathrm{sign} \:}               		%the sign of a number
+\newcommand{\sumtT}{\sum_{t=1}^T}						%sum from t to T
+\newcommand{\sumsT}{\sum_{s=1}^T}						%sum from s to T
+\newcommand{\sumnN}{\sum_{n=1}^N}						%sum from n to N
+\newcommand{\summN}{\sum_{m=1}^N}
+\newcommand{\sumkK}{\sum_{k=1}^K}						%sum from k to K
+\newcommand{\sumin}{\sum_{i=1}^n}						%sum from i to n
+\newcommand{\sumiN}{\sum_{i=1}^N}						%sum from i to N
+\newcommand{\sumjN}{\sum_{j=1}^N}						%Sum from j to N
+\newcommand{\summM}{\sum_{m=1}^M}						%sum from m to M
+\newcommand{\sumjJ}{\sum_{j=1}^J}						%sum from j to J
+\newcommand{\prodtT}{\prod_{t=1}^T}						%prod from t to T
+\newcommand{\prodnN}{\prod_{n=1}^N}						%prod from n to N
+\newcommand{\prodkK}{\prod_{k=1}^K}						%prod from k to K
+\newcommand{\prodin}{\prod_{i=1}^n}						%prod from i to n
+\newcommand{\intn}{\int_{t_0}^{t_n}}					%integral from t_0 to t_n
+\newcommand{\intN}{\int_{t_0}^{t_N}}					%integral from t_0 to t_N
+\newcommand{\inti}{\int_{t_0}^{t_i}}					%integral from t_0 to t_i
+\newcommand{\intimi}{\int_{t_{i-1}}^{t_i}}				%integral from t_{i-1} to t_i
+\renewcommand{\P}{\mathbb{P}}							%blackboard style "P" for probability
+\newcommand{\E}{\mathbb{E}}								%blackboard style "E" for expecatation
+\newcommand{\V}{\mathbb{V}}								%blackboard style "V" for variance
+\newcommand{\R}{\mathbb{R}}								%blackboard style "R" to denote real number line
+\newcommand{\CalF}{\mathcal{F}}							%mathcal style "F" to denote filtration
+\newcommand{\CalG}{\mathcal{G}}							%mathcal style "G" to denote a grid
+\newcommand{\CalH}{\mathcal{H}}							%mathcal style "H" to denote a sub-grid
+\newcommand{\CalA}{\mathcal{A}}							%mathcal style "A" to denote some set
+\newcommand{\CalB}{\mathcal{B}}							%mathcal style "B" to denote some set
+\newcommand{\CalD}{\mathcal{D}}							%mathcal style "D" to denote some set
+\newcommand{\CalI}{\mathcal{I}}							%mathcal style "I" to denote a set
+\newcommand{\CalL}{\mathcal{L}}							%mathcal style "L" used to denote boundedness
+\newcommand{\CalV}{\mathcal{V}}						%mathcal style "V" to denote some set
+\newcommand{\CalP}{\mathcal{P}}							%mathcal style "P" to denote some set
+\newcommand{\CalN}{\mathcal{N}}							%mathcal style "N" for denoting the normal distribution
+\newcommand{\CalT}{\mathcal{T}}							%mathcal style "T" to denote some set
+\newcommand{\CalX}{\mathcal{X}}							%mathcal style "X" to denote a set (usually of observations)
+\newcommand{\ScrF}{\mathscr{F}}							%mathscr style "F" to denote filtration
+\newcommand{\ScrG}{\mathscr{G}}							%mathscr style "G" to denote a grid
+\newcommand{\ScrH}{\mathscr{H}}							%mathscr style "H" to denote a sub-grid
+\newcommand{\ScrA}{\mathscr{A}}							%mathscr style "A" to denote some set
+\newcommand{\ScrB}{\mathscr{B}}							%mathscr style "B" to denote some set
+\newcommand{\ScrD}{\mathscr{D}}							%mathscr style "D" to denote some set
+\newcommand{\ScrI}{\mathscr{I}}							%mathscr style "I" to denote some set
+\newcommand{\ScrL}{\mathscr{L}}							%mathscr style "L" used to denote boundedness
+\newcommand{\ScrV}{\mathscr{V}}							%mathscr style "V" to denote some set
+\newcommand{\ScrP}{\mathscr{P}}							%mathscr style "P" to denote some set
+\newcommand{\ScrN}{\mathscr{N}}							%mathscr style "N" for denoting the normal distribution
+\newcommand{\FrakL}{\mathfrak{L}}						%mathfrak style "L" to denote a likelihood function
+\newcommand{\Fraks}{\mathfrak{s}}						%mathfrak style "s"
+\newcommand{\frakf}{\mathfrak{f}}						%mathfrak style "f"
+\newcommand{\frakp}{\mathfrak{p}}                     %mathfrak style "p"
+\newcommand{\can}{\citeasnoun}							%Used as a shortcut for the citation command
+\newcommand{\blue}[1]{{\color{blue}#1}}					%Used to get blue text
+\newcommand{\red}[1]{{\color{red}#1}}					%Used to get red text
+\newcommand{\green}[1]{{\color{green}#1}}				%Used to get green text
+\newcommand{\ra}{\rightarrow}							%Shorthand for right arrow
+\newcommand{\qh}{\hatlatex article abstract{\theta}}							%Used to denote an estimator
+\newcommand{\nh}{\hat{\n}}								%Used to denote an estimator
+\newcommand{\ellb}{\bar{\ell}}							%Used to denote the scaled log likelihood
+\newcommand{\qb}{\bar{q}}								%Used to denote the scaled score
+\newcommand{\Qb}{\bar{Q}}								%Used to denote the scaled hessian
+\newcommand{\fbrac}[1]{\f \left( #1 \right)}			%Used for the standard normal
+\newcommand{\Fbrac}[1]{\F \left( #1 \right)}			%Used for the cumulative normal
+\newcommand{\ebrac}[1]{\exp \left( #1 \right)}			%Used for the exponential function
+\newcommand{\half}{\frac{1}{2}}							%Shorthand for a half
+\newcommand{\mhalf}{-\frac{1}{2}}						%Shorthand for minus a half
+
+%----------------------- CUSTOM DOCUMENT COMMANDS ------------------------------------------------
+
+
+
+
+%---------------------------------------------------------------------------
+
+
+\begin{document}
+\title{Bootstrapping Daily Returns}
+
+\author[C. Bowers]{Colin T. Bowers$^\dag$} 
+\thanks{$^\dag$Department of Economics, Macquarie University, North Ryde NSW 2109, Australia.  \textit{Email:} colintbowers@gmail.com}
+
+\keywords{Robust, Statistics, Non-Gaussian}
+
+\date{5th August, 2016}
+
+\maketitle
+
+\begin{abstract}
+This paper is designed to accompany a set of presentation slides that provide a selective introduction to Robust Statistics with a particular focus on financial applications. XXXX MORE HERE 
+\end{abstract}
+
+\section{Introduction}\label{secRSTIntroduction}
+
+The field of Robust Statistics provides statistical methods for use with non-Gaussian data. In particular, Robust Statistics are useful when the data generating process is leptokurtotic, that is, when the data exhibits fat-tails. 
+
+
+
+
+
+%------------------------- BIBLIOGRAPHY -----------------------------------------
+%\clearpage
+%%\bibliographystyle{harvard}
+%\bibliographystyle{myagsm}
+%\bibliography{/home/colin/Dropbox/Articles_Academic/BiBTeX/BiBTeX_Article_List}
+%
+
+\end{document}
+
+
+
+

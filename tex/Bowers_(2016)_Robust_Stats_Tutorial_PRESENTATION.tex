@@ -1,0 +1,666 @@
+\documentclass{beamer}
+\usetheme{Warsaw}
+
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsbsy}
+\usepackage{amsmath}
+\usepackage{array}
+\usepackage{xmpmulti}
+\usepackage{textpos}
+
+%\addtobeamertemplate{footnote}{}{\vspace{2ex}}
+\setlength{\extrarowheight}{0.2cm}
+\setlength{\arraycolsep}{0.08cm}
+
+%\newtheorem{theorem}{Theorem}[section]
+%\newtheorem{lemma}[theorem]{Lemma}
+%\newtheorem{proposition}[theorem]{Proposition}
+%\newtheorem{corollary}[theorem]{Corollary}
+
+%\newenvironment{proof}[1][Proof]{\begin{trivlist}
+%\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+%\newenvironment{definition}[1][Definition]{\begin{trivlist}
+%\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+%\newenvironment{example}[1][Example]{\begin{trivlist}
+%\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+%\newenvironment{remark}[1][Remark]{\begin{trivlist}
+%\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+
+\renewcommand{\a}{\alpha}						
+\renewcommand{\b}{\beta}
+\renewcommand{\d}{\delta}						
+\newcommand{\e}{\epsilon}
+\newcommand{\g}{\gamma}
+\newcommand{\h}{\eta}					
+\renewcommand{\j}{\varphi}
+\renewcommand{\l}{\lambda}					
+\newcommand{\m}{\mu}
+\newcommand{\n}{\nu}
+\newcommand{\p}{\pi}
+\renewcommand{\r}{\rho}
+\newcommand{\s}{\sigma}							
+\newcommand{\q}{\theta}
+\renewcommand{\t}{\tau}								
+\newcommand{\w}{\omega}
+\newcommand{\y}{\psi}
+\newcommand{\z}{\zeta}
+\newcommand{\D}{\Delta}
+\newcommand{\G}{\Gamma}
+\renewcommand{\L}{\Lambda}
+\newcommand{\Q}{\Theta}
+\renewcommand{\S}{\Sigma}
+\newcommand{\W}{\Omega}
+\newcommand{\bgtilde}[1]{\tilde{\bg#1}}					%overset tilde bolded little greek letter
+\newcommand{\bghat}[1]{\hat{\bg#1}}						%overset hat bolded little greek letter
+\newcommand{\btilde}[1]{\tilde{\bm#1}}					%overset tilde on bolded letter
+\newcommand{\bhat}[1]{\hat{\bm#1}}						%overset hat on bolded letter
+\newcommand{\bi}{\begin{itemize}} 						%start bullet points
+\newcommand{\ei}{\end{itemize}} 						%end bullet points
+\newcommand{\bn}{\begin{enumerate}}						%start numbering
+\newcommand{\en}{\end{enumerate}}						%end numbering
+\newcommand{\bne}{\begin{equation}}						%begin numbered equation
+\newcommand{\ene}{\end{equation}}						%end numbered equation
+\renewcommand{\bf}{\textbf}								%bold font in text
+\newcommand{\bm}{\mathbf}								%bold font in maths
+\newcommand{\bg}{\boldsymbol}							%bold font in maths for small greek letters
+\newcommand{\tf}{\textrm}								%text font in maths
+\newcommand{\Def}[1]{\bf{Definition (#1):}}				%generic "definition" macro
+\renewcommand{\i}{\item}								%item in bullet or numbered list
+\newcommand\independent{\protect\mathpalette{\protect\independenT}{\perp}}	%independence symbol
+\def\independenT#1#2{\mathrel{\rlap{$#1#2$}\mkern2mu{#1#2}}}				%independence symbol (cont'd)
+\newcommand{\cov}{\textrm{cov}}							%covariance
+\newcommand{\Acov}{\textrm{Acov}}						%aymptotic covariance
+\renewcommand{\skew}{\textrm{skew}}						%skewness
+\newcommand{\kurt}{\textrm{kurt}}						%kurtosis
+\newcommand{\plim}{\textrm{plim}}						%probability limit
+\newcommand{\as}{\textrm{a.s.}}							%almost surely
+\newcommand{\ms}{\textrm{m.s.}}							%mean square
+\newcommand{\ra}{\rightarrow}
+\newcommand{\ConT}{\overset{T \rightarrow \infty}{\xrightarrow{\hspace*{0.75cm}}}} %converges T goes to infinity
+\newcommand{\ConN}{\overset{N \rightarrow \infty}{\xrightarrow{\hspace*{0.75cm}}}} %converges N goes to infinity
+\newcommand{\ConP}{\overset{\P}{\longrightarrow}}		%converges in probability
+\newcommand{\ConAS}{\overset{\as}{\longrightarrow}}		%converges almost surely
+\newcommand{\ConMS}{\overset{\ms}{\longrightarrow}}		%converges in mean square
+\newcommand{\ConD}{\overset{\tf{d}}{\longrightarrow}}	%converges in distribution
+\newcommand{\ConLOne}{\overset{\mathcal{L}_1}{\longrightarrow}}		%converges in L1
+\newcommand{\ConLTwo}{\overset{\mathcal{L}_2}{\longrightarrow}}	%converges in L1
+\newcommand{\ADis}{\overset{\tf{a}}{\backsim}}			%asymptotically distributed as
+\newcommand{\N}{\mathcal{N}}							%normal distribution "N"
+\newcommand{\snormal}{\N(0,1)}							%standard normal
+\newcommand{\unormal}{\N(\m,\s^2)}						%univariate normal
+\newcommand{\vnormal}{\N(\bg{\m},\bm{\S})}				%vector normal
+\newcommand{\vsnormal}{\N(\bm{0},\bm{I})}				%vector standard normal
+\newcommand{\ulnormal}{\tf{Log-}\N(\m,\s^2)}			%univariate log-normal
+\newcommand{\norm}[1]{\left|\left|#1\right|\right|}		%norm
+\newcommand{\abs}[1]{\left|#1\right|}				 	%absolute value
+\newcommand{\tran}{\mathsf{T}}							%transpose
+\newcommand{\tr}{\mathrm{tr}}							%trace
+\newcommand{\adj}{\mathrm{adj}}							%adjoint (of a matrix)
+\newcommand{\sumtT}{\sum_{t=1}^T}						%sum from t=1 to T
+\newcommand{\sumnN}{\sum_{n=1}^N}						%sum from n=1 to N
+\newcommand{\sumkK}{\sum_{k=1}^K}						%sum from k=1 to K
+\renewcommand{\P}{\mathbb{P}}							%blackboard style "P" for probability
+\newcommand{\E}{\mathbb{E}}								%blackboard style "E" for expecatation
+\newcommand{\V}{\mathbb{V}}								%blackboard style "V" for variance
+\newcommand{\R}{\mathbb{R}}								%blackboard style "R" to denote real number line
+\newcommand{\CalF}{\mathcal{F}}							%mathcal style "F" to denote filtration
+\newcommand{\CalG}{\mathcal{G}}							%mathcal style "G" to denote a grid
+\newcommand{\CalH}{\mathcal{H}}							%mathcal style "H" to denote a sub-grid
+\newcommand{\CalA}{\mathcal{A}}							%mathcal style "A" to denote some set
+\newcommand{\CalB}{\mathcal{B}}							%mathcal style "B" to denote some set
+\newcommand{\blue}[1]{{\color{blue}#1}}					%colour the text blue
+\newcommand{\red}[1]{{\color{red}#1}}					%colour the text red
+\newcommand{\green}[1]{{\color{green}#1}}					%colour the text red
+\newcommand{\yellow}[1]{{\color{yellow}#1}}					%colour the text red
+\newcommand{\can}{\citeasnoun}							%Used as a shortcut for the citation command
+
+
+%----------------------------------- CUSTOM COMMANDS ---------------------------------------------------%
+\newcommand{\qh}{\hat{\theta}}
+%\newcommand{\qt}{\tilde{\theta}}
+\newcommand{\qt}{y}
+\newcommand{\qtt}{\tilde{\tilde{\theta}}}
+\newcommand{\db}{\bar{d}}
+
+
+\def\newblock{\hskip .11em plus .33em minus .07em}
+\title[{\makebox[.45\paperwidth]{\hfill \insertframenumber/\inserttotalframenumber}}]{Robust Stats Tutorial}  
+\author{Colin T. Bowers}
+\institute{Macquarie University, colintbowers@gmail.com}
+\date{5-August-2016}
+\begin{document}		
+
+\begin{frame}	
+
+\maketitle
+
+\end{frame}
+
+\setbeamercovered{dynamic}
+\setbeamertemplate{bibliography item}{}
+%\setbeameroption{show notes} %un-comment to see the notes
+%\setbeamertemplate{note page}[plain] %un-comment to print plain version of notes
+
+
+
+
+	
+%\section{Introduction}
+%
+%\begin{frame}
+%\frametitle{}
+%\begin{center}
+%\LARGE{Section 1: The peculiar phenomenon}
+%\end{center}
+%\end{frame}
+%
+%
+%
+%
+%\begin{frame}
+%\frametitle{A crash course on value-at-risk}
+%\begin{center}
+%\begin{picture}(200,100) \put(-80,-45){\includegraphics[height=6.7cm]{/home/colin/Dropbox/Presentations/2014_RMIT_VaR_Industry_Versus_Academia/Figures/PlotVaR}} \end{picture}
+%\end{center}
+%\end{frame}
+%
+%\begin{frame}
+%\frametitle{Why do banks care?}
+%\begin{itemize}
+%\item It determines the magnitude of the capital cushion banks must put aside to offset their risky positions (in combination with the \blue{multiplier}).
+%\item It is a popular heuristic for quickly assessing the risk of a given position.
+%\item It is one number and thus keeps reports to management simple.
+%\end{itemize}
+%\end{frame}
+%
+%\begin{frame}
+%\frametitle{How do banks forecast value-at-risk?}
+%\begin{enumerate}
+%\item \blue{historical empirical quantile}, often called called the \blue{historical simulation}.
+%\item \blue{Monte Carlo simulation}.
+%\end{enumerate}
+%\end{frame}
+%
+%
+%
+%\begin{frame}
+%\frametitle{An academic recommendation from 2002}
+%\can{Berkowitz_O_Brien_(2002)} ``How accurate are value-at-risk models at commercial banks'', \emph{The Journal of Finance}
+%
+%\vspace{0.5cm}
+%
+%An Orwellian summary:
+%\begin{center}
+%\blue{GARCH-based model = good}
+%
+%\vspace{0.2cm}
+%
+%\red{Historical empirical quantile = bad}
+%\end{center}
+%
+%\vspace{0.5cm}
+%
+%\footnotesize{\can{Perignon_Smith_(2010)} estimate about 73\% of banks used the historical empirical quantile at the turn of the millennium.}
+%\end{frame}
+%
+%
+%
+%
+%\begin{frame}
+%\frametitle{Academia: 2002 to today}
+%\begin{center}
+%\blue{Complicated volatility or quantile models = good}
+%
+%\vspace{0.2cm}
+%
+%\red{Historical empirical quantile = bad} (or, more often, ignored entirely)
+%
+%\vspace{1cm}
+%
+%\footnotesize{Disclaimer: I am guilty of preaching this message! (\can{Bowers_Heaton_(2014c)})}
+%\end{center}
+%\end{frame}
+%
+%
+%
+%
+%\begin{frame}
+%\frametitle{Industry: 2002 to today}
+%\begin{center}
+%\blue{Historical empirical quantile = good}
+%\end{center}
+%
+%\footnotesize{Usage increased from 73\% in 2000 to 75\% in 2012. (\can{Mehta_Neukirchen_Pfetsch_Poppensieker_(2012)})}
+%
+%\end{frame}
+%
+%
+%
+%\begin{frame}
+%\frametitle{The peculiar phenomenon}
+%Industry has ignored the entire academic literature (and it's a vast literature) on value-at-risk over the past decade.
+%
+%\begin{center}
+%Why?
+%\end{center}
+%\end{frame}
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%----------------------- SECTION 2: THE MOTIVATIONS OF THE PLAYERS ---------------------------------------
+%	
+%\section{The motivations of the players}
+%
+%\begin{frame}
+%\frametitle{}
+%\begin{center}
+%\LARGE{Section 2: The motivations of the players}
+%\end{center}
+%\end{frame}
+%
+%
+%\begin{frame}
+%\frametitle{How do academics assess value-at-risk models?}
+%Consider the indicator function:
+%\begin{equation}
+%\mathbb{I}\{r_t \leq VaR_t\}, t = 1, ..., T
+%\end{equation}
+%
+%\begin{itemize}
+%\item \can{Kupiec_(1995)}
+%\item \can{Christoffersen_(1998)}
+%\item \can{Engle_Manganelli_(2004)}
+%\item \can{Gaglianone_Lima_Linton_Smith_(2011)}
+%\item \can{Bowers_Heaton_(2014)}
+%\end{itemize}
+%
+%\end{frame}
+%
+%
+%
+%
+%\begin{frame}
+%\frametitle{How does industry assess value-at-risk models?}
+%\begin{center}
+%\bf{Officially}:
+%\end{center}
+%A back-test every quarter, over the most recent year of data (approx. 250 days):
+%\begin{itemize}
+%\item 4 exceptions or less = \green{Green} zone
+%\item 5 to 9 exceptions = \yellow{Yellow} zone
+%\item 10 exceptions or more = \red{Red} zone
+%\end{itemize}
+%i.e similar to \can{Kupiec_(1995)}
+%
+%\vspace{0.3cm}
+%
+%\begin{center}
+%\bf{Unofficially}:
+%
+%\vspace{0.1cm}
+%
+%?
+%\end{center}
+%\end{frame}
+%
+%
+%
+%
+%
+%\begin{frame}
+%\frametitle{Unofficial industry motivations}
+%For the purposes of this presentation, I hypothesize four unofficial industry motivations:
+%\begin{enumerate}
+%\item a small capital cushion,
+%\item a stable capital cushion,
+%\item keep the regulator happy (i.e. don't fail the official test), and
+%\item use a model that is simple to implement.
+%\end{enumerate}
+%\end{frame}
+%
+%
+%
+%
+%
+%\begin{frame}
+%\frametitle{The Question of Interest}
+%Given the hypothesized industry motivations, which of the following models will industry prefer:
+%\begin{itemize}
+%\item historical empirical quantile (window = 500),
+%\item historical empirical quantile (window = 250),
+%\item RiskMetrics with Normal assumption, or
+%\item Bootstrap Return Method (BRM) quantile forecast (intraday).
+%\end{itemize}
+%\end{frame}
+%
+%
+%
+%
+%
+%\begin{frame}
+%\frametitle{Data and code}
+%\begin{itemize}
+%\item Every transaction on $48$ of the largest (by market cap) stocks listed on the NYSE.
+%\item Data spans January 2004 to December 2013.
+%\item Data sourced from Thomson Reuters Tick History database via an API provided by SIRCA written in the R language.
+%\item Data cleaned following \can{Barndorff-Nielsen_Hansen_Lunde_Shephard_(2009)}.
+%\item All code written in Matlab, making use of Kevin Sheppard's Oxford MFE Matlab toolbox.
+%\item Analysis performed on each asset, i.e. I consider 48 static portfolios, each consisting of only 1 asset (unrealistic, but makes analysis much simpler).
+%\end{itemize}
+%\end{frame}
+%
+%
+%
+%
+%
+%
+%
+%
+%----------------------- SECTION 3: EVALUATING THE MODELS (ACADEMIC MOTIVATIONS) ---------------------------------------
+%	
+%\section{Evaluating the models (academic motivations)}
+%
+%
+%\begin{frame}
+%\frametitle{}
+%\begin{center}
+%\LARGE{Section 3: Evaluating the models (academic motivations)}
+%\end{center}
+%\end{frame}
+%
+%
+%
+%
+%\begin{frame}
+%\frametitle{Overall methodology}
+%I use the method proposed in \can{Bowers_Heaton_(2014)} to test forecast accuracy. This uses:
+%\begin{itemize}
+%\item a consistent proxy for true VaR constructed using intraday data, and
+%\item the model confidence set of \can{Hansen_Lunde_Nason_(2011)}.
+%\end{itemize}
+%\end{frame}
+%
+%
+%
+%
+%\begin{frame}
+%\frametitle{Forecast accuracy: the IBM example}
+%\begin{center}
+%\begin{picture}(200,100) \put(-80,-45){\includegraphics[height=6.7cm]{/home/colin/Dropbox/Presentations/2014_RMIT_VaR_Industry_Versus_Academia/Figures/PlotForeComp1_IBM_N}} \end{picture}
+%\end{center}
+%\end{frame}
+%
+%
+%
+%\begin{frame}
+%\frametitle{Forecast accuracy: the IBM example}
+%\begin{center}
+%\begin{picture}(200,100) \put(-80,-45){\includegraphics[height=6.7cm]{/home/colin/Dropbox/Presentations/2014_RMIT_VaR_Industry_Versus_Academia/Figures/PlotForeComp2_IBM_N}} \end{picture}
+%\end{center}
+%\end{frame}
+%
+%
+%
+%
+%
+%\begin{frame}
+%\frametitle{The model confidence set}
+%Consider a set containing $K$ models. The model confidence set is an iterative algorithm:
+%\begin{enumerate}
+%\item Test the null hypothesis: All models have equal forecast ability.
+%\item If fail to reject, then terminate algorithm.
+%\item If reject, remove the worst performing models and iterate to step 1.
+%\end{enumerate}
+%The model confidence set controls the \emph{family-wise error rate}.
+%\end{frame}
+%
+%
+%
+%
+%
+%
+%\begin{frame}
+%\frametitle{Results: all models}
+%\begin{center}
+%\begin{table}
+%\caption{Number of times forecast model remains in model confidence set across all 48 assets}
+%\begin{tabular}{c c}
+%\hline \hline
+%\bf{Model}      								& \bf{Number} \\
+%Historical empirical quantile (500)  		& 0   \\
+%Historical empirical quantile (250)  		& 0   \\
+%RiskMetrics with Normal transform	  		& 0   \\
+%Bootstrap return method quantile (intraday)  & 48   \\
+%\hline
+%\end{tabular}
+%\end{table}
+%\end{center}
+%\end{frame}
+%
+%
+%
+%
+%\begin{frame}
+%\frametitle{Results: simple models}
+%\begin{center}
+%\begin{table}
+%\caption{Number of times forecast model remains in model confidence set across all 48 assets}
+%\begin{tabular}{c c}
+%\hline \hline
+%\bf{Model}      								& \bf{Number} \\
+%Historical empirical quantile (500)  		& 0   \\
+%Historical empirical quantile (250)  		& 1   \\
+%RiskMetrics with Normal transform	  		& 48   \\
+%\hline
+%\end{tabular}
+%\end{table}
+%\end{center}
+%\end{frame}
+%
+%
+%
+%
+%
+%%----------------------- SECTION 4: EVALUATING THE MODELS (INDUSTRY MOTIVATIONS) ---------------------------------------
+%
+%
+%\section{Evaluating the models (industry motivations)}
+%
+%
+%\begin{frame}
+%\frametitle{}
+%\begin{center}
+%\LARGE{Section 4: Evaluating the models (industry motivations)}
+%\end{center}
+%\end{frame}
+%
+%
+%
+%\begin{frame}
+%\frametitle{The empirical exercise}
+%The following are analysed across the 48 static portfolios (each consisting of only one asset):
+%\begin{itemize}
+%\item the size of the capital cushion,
+%\item the stability of the capital cushion,
+%\item the multiplier of the capital cushion, and
+%\item the zone (red, yellow, or green).
+%\end{itemize}
+%\end{frame}
+%
+%
+%
+%\begin{frame}
+%\frametitle{The capital cushion}
+%The capital cushion at time $t$ for model $k$ is determined by:
+%\begin{equation}
+%C_{t,k} = \abs{\g_{t,k} \cdot \sqrt{10} \cdot VaR_{t,k}} ,
+%\end{equation}
+%where $C_{t,k}$ is the cushion, expressed as a percent of dollars invested, $VaR_{t,k}$ is the value-at-risk forecast (in return space), and $\g_{t,k} \in [3, 6]$ is the multiplier.
+%
+%\vspace{0.2cm}
+%
+%Under Basel II, every quarter, the model is backtested over the most recent $250$ days. The multiplier is determined by the number of value-at-risk violations in this backtest.
+%\end{frame}
+%
+%
+%
+%
+%\begin{frame}
+%\frametitle{The multiplier}
+%\begin{center}
+%\begin{table}
+%\begin{tabular}{c c c}
+%\hline \hline
+%\bf{Zone}	& \bf{VaR Violations}	& \bf{$\g$} \\
+%\green{Green} (1)		& $0$ to $4$				& 3 \\
+%\yellow{Yellow} (2)		& $5$					& 4.2 \\
+%\yellow{Yellow} (2)		& $6$					& 4.5 \\
+%\yellow{Yellow} (2)		& $7$					& 4.95 \\
+%\yellow{Yellow} (2)		& $8$					& 5.25 \\
+%\yellow{Yellow} (2)		& $9$					& 5.55 \\
+%\red{Red} (3)			& $10$ or more			& 6 \\
+%\hline
+%\end{tabular}
+%\end{table}
+%\end{center}
+%\end{frame}
+%
+%
+%
+%
+%
+%
+%\begin{frame}
+%\frametitle{The multiplier for IBM}
+%\begin{center}
+%\begin{picture}(200,100) \put(-80,-45){\includegraphics[height=6.7cm]{/home/colin/Dropbox/Presentations/2014_RMIT_VaR_Industry_Versus_Academia/Figures/PlotGamma_IBM_N}} \end{picture}
+%\end{center}
+%\end{frame}
+%
+%
+%
+%
+%
+%\begin{frame}
+%\frametitle{Value-at-risk forecasts for IBM}
+%\begin{center}
+%\begin{picture}(200,100) \put(-80,-45){\includegraphics[height=6.7cm]{/home/colin/Dropbox/Presentations/2014_RMIT_VaR_Industry_Versus_Academia/Figures/PlotFore_IBM_N}} \end{picture}
+%\end{center}
+%\end{frame}
+%
+%
+%
+%
+%
+%\begin{frame}
+%\frametitle{The capital cushion for IBM}
+%\begin{center}
+%\begin{picture}(200,100) \put(-80,-45){\includegraphics[height=6.7cm]{/home/colin/Dropbox/Presentations/2014_RMIT_VaR_Industry_Versus_Academia/Figures/PlotCushion_IBM_N}} \end{picture}
+%\end{center}
+%\end{frame}
+%
+%
+%
+%
+%
+%\begin{frame}
+%\frametitle{Results averaged across all assets}
+%\begin{center}
+%\begin{table}
+%\begin{tabular}{c c c c c}
+%\hline \hline
+%\bf{Model} 	& \bf{Avg Zone} 	& \bf{Avg $\g$} 	& \bf{Avg Cushion} \\
+%HEQ500 		& 1.45			& 3.72			& 54\% \\
+%HEQ250 		& 1.21			& 3.33			& 50\% \\
+%RiskMetrics 	& 1.47			& 3.75			& 40\% \\
+%IntradayBRM 	& 1.17			& 3.24			& 35\% \\
+%\hline
+%\end{tabular}
+%\end{table}
+%\end{center}
+%\begin{footnotesize}
+%HEQ = Historical Empirical Quantile, IntradayBRM = Bootstrap Return Method Quantile (intraday)
+%\end{footnotesize}
+%
+%\vspace{0.2cm}
+%
+%*For HEQ methods, capital cushion only changes on 3\% of days. 
+%*For RiskMetrics and IntradayBRM, it changes everyday. 
+%\end{frame}
+%
+%
+%
+%\begin{frame}
+%\frametitle{Conclusions}
+%\begin{itemize}
+%\item Historical empirical quantile (500) does poorly.
+%\item IntradayBRM has the best overall performance, but the cushion size changes frequently and dramatically.
+%\item RiskMetrics has a smaller cushion than HEQ250 (by 10\%), but you will be in a lot more trouble with the regulator, and the cushion size changes frequently and dramatically.
+%\item Historical empirical quantile (250) has a larger cushion than RiskMetrics, but strongly dominates it on every other metric.  
+%\end{itemize}
+%Tim Dun at Westpac mostly uses the historical empirical quantile (250). The present analysis suggests this is a rational choice, despite what the academic literature suggests.
+%\end{frame}
+%
+
+
+
+%%----------------------------- SUPPLEMENTAL MATERIAL ---------------------------
+%\appendix
+%\section{Supplemental Material}
+%\begin{frame}[label=SupplementalMainResult]
+%If $X_{t,n}$ is $L_{2+\d}$ NED of size $-1$ on an $\a$-mixing base of size $-(2+\d)(r+\d)/(r-2)$, $r > 2$, $\d > 0$, with $\E \abs{X_{t,n}}^{r+\d} < \infty$ and $\E X_{t,n}$ obeying the homogeneity condition of Goncalves and White (2002), and the stationary bootstrap block size obeys the usual growth condition, then if:
+%\begin{equation*}
+%q_{t,n} = N^{-\frac{1}{2}} X_{t,n} ,
+%\end{equation*}
+%and $\E r_{t,N} = 0$, then
+%\begin{equation*}
+%\sup_{x \in \mathbb{R}} \abs{\P \left( r_{t,N} \leq x \right) - \P^* \left( r_{t,N}^* - \E^* r_{t,N}^* \leq x \right)} \ConP 0 ,
+%\end{equation*}
+%as $N \ra \infty$, where $\P^*$ and $\E^*$ are conditioned on the original intraday data.
+%
+%\vspace{0.1cm}
+%
+%\hyperlink{MainResult}{\beamerbutton{Return}}
+%\end{frame}
+
+
+
+
+
+
+
+
+
+
+
+%BELOW ARE SOME EXAMPLES ON THE INSERTGRAHPICS COMMAND
+%\begin{frame}
+%\frametitle{Noise}
+%\includegraphics[height=4cm, clip=true, trim=0 0 0 225]{BidAskBounceExample}
+%\includegraphics[totalheight=1\textheight, width=1\textwidth,viewport=0 0 580 480,clip]{BidAskBounceExample}
+%\includegraphics[height=8cm,viewport=0 0 0 0,clip]{BidAskBounceExample}
+
+%I LIKE THIS ONE IN PARTICULAR
+%\begin{picture}(20, -20) \put(5, -5){\includegraphics[height=5cm]{NameOfFile}} \end{picture}
+
+%BELOW IS AN EXAMPLE ON BUILDING YOUR OWN FRAME TO POSITION THE GRAPH
+%\begin{frame}
+%\framebox{
+%	\begin{picture}(200,200)
+%		\put(-20,-78){\includegraphics[height=13cm]{2006to2007DailyTradingVolume}}
+%	\end{picture}
+%		}
+%\end{frame}
+
+
+\end{document}

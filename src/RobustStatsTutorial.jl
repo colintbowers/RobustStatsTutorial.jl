@@ -49,8 +49,10 @@ function t_dist_simple_example()
     (numLower, numUpper) = tmean_num_cut(tDataSort, p/2, p/2) #Get number of observations cut below and above
     yLower = mean(tDataSort[numLower:numLower+1]) #Get the midpoint of the last lower cut observation and the first lower kept observation
     yUpper = mean(tDataSort[end-numUpper:end-numUpper+1]) #Get the midpoint of the last upper kept observation and the first upper cut observation
-    dataPlot1 = plot(x=collect(1:numObs), y=tData, yintercept=[yLower, yUpper], Geom.point, Geom.hline, defaultThemeOverride)
-    draw_local(dataPlot1, "t_Dist_Data_With_Trim_Cutoff", dirPath=outputDir, fileType=:svg)
+    dataPlot1 = plot(x=collect(1:numObs), y=tData, Geom.point, defaultThemeOverride)
+    dataPlot2 = plot(x=collect(1:numObs), y=tData, yintercept=[yLower, yUpper], Geom.point, Geom.hline, defaultThemeOverride)
+    draw_local(dataPlot1, "t_Dist_Data", dirPath=outputDir, fileType=:svg)
+    draw_local(dataPlot2, "t_Dist_Data_With_Trim_Cutoff", dirPath=outputDir, fileType=:svg)
 end
 
 
