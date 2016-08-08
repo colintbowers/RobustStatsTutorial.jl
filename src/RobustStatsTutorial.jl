@@ -24,8 +24,11 @@ using Base.Dates, Compose, Gadfly, StatsBase, KernelDensity, Distributions
 #Fixed output directory based on Linux OS. Will need to be adjusted for Windows or Mac users.
 const outputDir = "/home/"*ENV["USER"]*"/robust_stats_tutorial_output/"::ASCIIString
 
-#Fixed theme override for all plots
+#Fixed theme override for all plots and colour order for multivariate plots
 const defaultThemeOverride = Theme(key_title_font_size=14pt, key_label_font_size=14pt, minor_label_font_size=14pt, major_label_font_size=17pt, key_title_font_size=17pt)::Theme
+const colourVec = ["blue", "green", "red", "black", "purple", "dark blue", "darkgreen", "gray", "brown", "cyan",
+				   "violetred", "blue2", "orange", "green2", "darkred", "gray20", "chocolate", "brown2", "darkorange", "gray40",
+				   "cadetblue", "violet", "green4", "brown4", "blue4"]::Vector{ASCIIString} #A vector of 25 colours to use in plots
 
 
 #Create output directory
@@ -35,27 +38,60 @@ const defaultThemeOverride = Theme(key_title_font_size=14pt, key_label_font_size
 include("common.jl")
 
 #--------------------------------------------
-# EXAMPLE WITH t-DISTRIBUTION
+# SIMPLE EXAMPLE WITH t-DISTRIBUTION
 #--------------------------------------------
 function t_dist_simple_example()
     numObs = 20 #Number of observations to use in this subsection
     tDist = TDist(2) #Initiate t-distribution with 2 degrees of freedom
     srand(78) #Specify a range that results in a good dataset for demonstrating the point (yes I mined this from the first 100 integers)
     tData = rand(tDist, numObs) #Simulate iid from t-distribution
-    tDataSort = sort(tData) #Sort the data
-    tDataMean = mean(tData) #Get sample mean
+    tDataSort = sort(tData)
+    tDataMean = mean(tData)
     p = 0.2 #Set a trimming proportion
     tDataTrimMean = tmean(tDataSort, p, sorted=true) #Get trimmed mean
     (numLower, numUpper) = tmean_num_cut(tDataSort, p/2, p/2) #Get number of observations cut below and above
     yLower = mean(tDataSort[numLower:numLower+1]) #Get the midpoint of the last lower cut observation and the first lower kept observation
     yUpper = mean(tDataSort[end-numUpper:end-numUpper+1]) #Get the midpoint of the last upper kept observation and the first upper cut observation
+    println("Plotting data")
     dataPlot1 = plot(x=collect(1:numObs), y=tData, Geom.point, defaultThemeOverride)
     dataPlot2 = plot(x=collect(1:numObs), y=tData, yintercept=[yLower, yUpper], Geom.point, Geom.hline, defaultThemeOverride)
     draw_local(dataPlot1, "t_Dist_Data", dirPath=outputDir, fileType=:svg)
     draw_local(dataPlot2, "t_Dist_Data_With_Trim_Cutoff", dirPath=outputDir, fileType=:svg)
+    println("Routine complete")
 end
 
+#--------------------------------------------
+# ESTIMATOR DENSITIES WITH t-DISTRIBUTION
+#--------------------------------------------
+function t_dist_estimator_densities( ; numIter::Int=5000, numObs::Int=50, tMeanProp1::Float64=0.1, tMeanProp2::Float64=0.5)
+    tDist = TDist(2) #Initiate t-distribution with 2 degrees of freedom
+    estVecVec = Vector{Float64}[ Array(Float64, numIter) for k = 1:4 ] #Pre-allocate structure to hold sample estimators
+    println("Simulating estimators")
+    for n = 1:numIter
+        #Simulate t-distribution data, and then get mean, two trimmed means, and the median for each dataset
+        tData = rand(tDist, numObs)
+        tDataSort = sort(tData)
+        estVecVec[1][n] = mean(tData)
+        estVecVec[2][n] = tmean(tDataSort, tMeanProp1, sorted=true)
+        estVecVec[3][n] = tmean(tDataSort, tMeanProp2, sorted=true)
+        estVecVec[4][n] = median_sorted(tDataSort)
+    end
+    println("Building kernel densities")
+    kDVec = KernelDensity.UnivariateKDE{FloatRange{Float64}}[ kde(estVecVec[k], boundary=(-1.0, 1.0)) for k = 1:4 ] #Get kernel density for each estimator
+    layerVec = Vector{Gadfly.Layer}[ layer(x=collect(kDVec[k].x), y=kDVec[k].density, Geom.line, adjust_default_theme_color(defaultThemeOverride, colourVec[k])) for k = 1:4 ] #Construct plot layers using kernel densities
+    println("Plotting kernel densities")
+    kernelPlot1 = plot(layerVec..., Guide.xlabel("Estimator value"), Guide.ylabel("Density"), Guide.manual_color_key(default_legend(["mean", string(tMeanProp1)*" trimmed mean", string(tMeanProp2)*" trimmed mean", "median"])...), defaultThemeOverride)
+    draw_local(kernelPlot1, "t_Dist_Estimator_Densities", dirPath=outputDir, fileType=:svg)
+    println("Routine complete")
+end
 
+#--------------------------------------------
+# MEASURING TAIL FATNESS
+#--------------------------------------------
+function tail_fatness_and_kurtosis()
+    error("Not written yet")
+
+end
 
 
 

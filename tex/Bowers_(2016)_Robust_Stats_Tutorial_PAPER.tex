@@ -10,7 +10,7 @@
 \usepackage{color}
 \usepackage{units}
 \usepackage{longtable}
-\usepackage{caption}  
+\usepackage{caption}
 \PassOptionsToPackage{hyphens}{url}\usepackage{hyperref}
 \usepackage[titletoc,title]{appendix}
 \usepackage{xcolor}
@@ -57,26 +57,26 @@
 
 %----------------- STANDARD COMMANDS -------------------------------------
 
-\renewcommand{\a}{\alpha}						
+\renewcommand{\a}{\alpha}
 \renewcommand{\b}{\beta}
 \renewcommand{\c}{\xi}
-\renewcommand{\d}{\delta}						
+\renewcommand{\d}{\delta}
 \newcommand{\e}{\epsilon}
 \newcommand{\f}{\phi}
 \newcommand{\g}{\gamma}
 \newcommand{\h}{\eta}
-\renewcommand{\i}{\iota}					
+\renewcommand{\i}{\iota}
 \renewcommand{\j}{\varphi}
 \renewcommand{\k}{\kappa}
-\renewcommand{\l}{\lambda}					
+\renewcommand{\l}{\lambda}
 \newcommand{\m}{\mu}
 \newcommand{\n}{\nu}
 \newcommand{\p}{\pi}
 \renewcommand{\r}{\rho}
-\newcommand{\s}{\sigma}							
+\newcommand{\s}{\sigma}
 \newcommand{\q}{\theta}
-\renewcommand{\t}{\tau}	
-\renewcommand{\u}{\upsilon}							
+\renewcommand{\t}{\tau}
+\renewcommand{\u}{\upsilon}
 \newcommand{\w}{\omega}
 \newcommand{\x}{\chi}
 \newcommand{\y}{\psi}
@@ -210,7 +210,7 @@
 \begin{document}
 \title{Bootstrapping Daily Returns}
 
-\author[C. Bowers]{Colin T. Bowers$^\dag$} 
+\author[C. Bowers]{Colin T. Bowers$^\dag$}
 \thanks{$^\dag$Department of Economics, Macquarie University, North Ryde NSW 2109, Australia.  \textit{Email:} colintbowers@gmail.com}
 
 \keywords{Robust, Statistics, Non-Gaussian}
@@ -220,15 +220,23 @@
 \maketitle
 
 \begin{abstract}
-This paper is designed to accompany a set of presentation slides that provide a selective introduction to Robust Statistics with a particular focus on financial applications. XXXX MORE HERE 
+This paper is designed to accompany a set of presentation slides that provide a selective introduction to Robust Statistics with a particular focus on financial applications. XXXX MORE HERE
 \end{abstract}
 
-\section{Introduction}\label{secRSTIntroduction}
+\section{Introduction to Robust Statistics}\label{secRSTIntroduction}
 
-The field of Robust Statistics provides statistical methods for use with non-Gaussian data. In particular, Robust Statistics are useful when the data generating process is leptokurtotic, that is, when the data exhibits fat-tails. 
+The field of Robust Statistics is concerned with statistical methods for use with non-Gaussian data. In particular, Robust Statistics are especially useful when the data generating process is leptokurtotic (i.e. fat-tails). When data exhibits fat-tails, non-robust (i.e. classical) estimators are typically very sensitive to a handful of outlier observations in the tails of Data Generating Process (DGP). The core idea of Robust Statistics is to ignore, or downplay, the effects of these outlier observations. This usually results in more stable estimates that are a closer reflection of the parameters of the DGP.
+
+For example, Figure~\ref{figTDistSimpleExample} contains $20$ observations generated from a Students-t distribution with $2$ degrees of freedom (a well-known, symmetric, fat-tailed distribution), where the horizontal bars partition XXXX observations in each tail. The true mean of the DGP is $0$, while the sample mean is XXXX. However, the value of this sample mean is heavily influenced by the tail observations that lie outside the horizontal bars. One robust statistic, known as the \emph{trimmed mean}, suggests removing the tail observations from the sample mean calculation. In this example, if we ignore the observations outside the horizontal bars, then the trimmed mean is XXXX, which is significantly closer to the true mean of the DGP.
+
+The example in the previous paragraph is, of course, cherry-picked for the purposes of illustration. Figure~\ref{figTDistEstimatorDensities} provides a more complete picture of the behaviour of different location estimators for Students-t distributed data. Figure~\ref{figTDistEstimatorDensities} contains simulated sampling distributions for four different location estimators; the sample mean, the $10$\% trimmed mean, the $50$\% trimmed mean, and the sample median.\footnote{The number of simulation iterations is $5000$, and the number of observations per iteration is 50.} Although all four sampling distributions are centred on the true mean of zero, the sample mean estimates are more likely to be further from zero than estimates from the other three (robust) estimators.
+
+One other important concept can be gleaned from Figure~\ref{figTDistEstimatorDensities}. Note that of the three robust estimators, the $50$\% trimmed mean is, on average, the most accurate. It turns out that there is an optimal\footnote{There are various metrics for optimality, but this is an unnecessary complication for understanding of this point.} degree of trimming which depends on the fatness of the tails of the DGP. For the case of Students-t with 2 degrees of freedom, the $10$\% trimmed mean does not trim enough observations, and the median\footnote{The median, by definition, trims all observations except for 1 or 2, depending on whether the total number of observations is odd or even.} trims too many.
 
 
+\section{Tail Fatness and Kurtosis}\label{secRSTTailFatness}
 
+blah
 
 
 %------------------------- BIBLIOGRAPHY -----------------------------------------
@@ -239,7 +247,3 @@ The field of Robust Statistics provides statistical methods for use with non-Gau
 %
 
 \end{document}
-
-
-
-
