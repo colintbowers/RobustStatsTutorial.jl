@@ -89,8 +89,21 @@ end
 # MEASURING TAIL FATNESS
 #--------------------------------------------
 function tail_fatness_and_kurtosis()
-    error("Not written yet")
+    using Distributions, StatsBase
+    tDist = TDist(2) #Initiate t-distribution with 2 degrees of freedom
+    numObsVec = collect(10:10:1000)
+    numSim = 1000
+    #Simulate the kurtosis as a function of sample size for t-distribution with 2 degrees of freedom
+    simKurtosis = Array(Float64, length(numObsVec))
+    for k = 1:length(numObsVec)
+        simKurtosis[k] = mean(Float64[ kurtosis(rand(tDist, numObsVec[k])) for m = 1:numSim ])
+    end
+    #Simulate the robust measure of fat-tails as a function of sample size
+    #SEE Hogg (1974) Section 4 for the robust measure of tail fatness
 
+
+
+    println(simKurtosis)
 end
 
 
