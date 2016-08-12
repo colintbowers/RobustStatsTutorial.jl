@@ -19,16 +19,17 @@ module RobustStatsTutorial
 
 
 #Load relevant modules
-using Base.Dates, Compose, Gadfly, StatsBase, KernelDensity, Distributions
+#using Base.Dates, Compose, Gadfly, StatsBase, KernelDensity, Distributions
+using Base.Dates, StatsBase, KernelDensity, Distributions
 
 #Fixed output directory based on Linux OS. Will need to be adjusted for Windows or Mac users.
 const outputDir = "/home/"*ENV["USER"]*"/robust_stats_tutorial_output/"::ASCIIString
 
 #Fixed theme override for all plots and colour order for multivariate plots
-const defaultThemeOverride = Theme(key_title_font_size=14pt, key_label_font_size=14pt, minor_label_font_size=14pt, major_label_font_size=17pt, key_title_font_size=17pt)::Theme
-const colourVec = ["blue", "green", "red", "black", "purple", "dark blue", "darkgreen", "gray", "brown", "cyan",
-				   "violetred", "blue2", "orange", "green2", "darkred", "gray20", "chocolate", "brown2", "darkorange", "gray40",
-				   "cadetblue", "violet", "green4", "brown4", "blue4"]::Vector{ASCIIString} #A vector of 25 colours to use in plots
+# const defaultThemeOverride = Theme(key_title_font_size=14pt, key_label_font_size=14pt, minor_label_font_size=14pt, major_label_font_size=17pt, key_title_font_size=17pt)::Theme
+# const colourVec = ["blue", "green", "red", "black", "purple", "dark blue", "darkgreen", "gray", "brown", "cyan",
+# 				   "violetred", "blue2", "orange", "green2", "darkred", "gray20", "chocolate", "brown2", "darkorange", "gray40",
+# 				   "cadetblue", "violet", "green4", "brown4", "blue4"]::Vector{ASCIIString} #A vector of 25 colours to use in plots
 
 
 #Create output directory
@@ -53,10 +54,10 @@ function t_dist_simple_example()
     yLower = mean(tDataSort[numLower:numLower+1]) #Get the midpoint of the last lower cut observation and the first lower kept observation
     yUpper = mean(tDataSort[end-numUpper:end-numUpper+1]) #Get the midpoint of the last upper kept observation and the first upper cut observation
     println("Plotting data")
-    dataPlot1 = plot(x=collect(1:numObs), y=tData, Geom.point, defaultThemeOverride)
-    dataPlot2 = plot(x=collect(1:numObs), y=tData, yintercept=[yLower, yUpper], Geom.point, Geom.hline, defaultThemeOverride)
-    draw_local(dataPlot1, "t_Dist_Data", dirPath=outputDir, fileType=:svg)
-    draw_local(dataPlot2, "t_Dist_Data_With_Trim_Cutoff", dirPath=outputDir, fileType=:svg)
+    #dataPlot1 = plot(x=collect(1:numObs), y=tData, Geom.point, defaultThemeOverride)
+    #dataPlot2 = plot(x=collect(1:numObs), y=tData, yintercept=[yLower, yUpper], Geom.point, Geom.hline, defaultThemeOverride)
+    #draw_local(dataPlot1, "t_Dist_Data", dirPath=outputDir, fileType=:svg)
+    #draw_local(dataPlot2, "t_Dist_Data_With_Trim_Cutoff", dirPath=outputDir, fileType=:svg)
     println("Routine complete")
 end
 
@@ -78,33 +79,41 @@ function t_dist_estimator_densities( ; numIter::Int=5000, numObs::Int=50, tMeanP
     end
     println("Building kernel densities")
     kDVec = KernelDensity.UnivariateKDE{FloatRange{Float64}}[ kde(estVecVec[k], boundary=(-1.0, 1.0)) for k = 1:4 ] #Get kernel density for each estimator
-    layerVec = Vector{Gadfly.Layer}[ layer(x=collect(kDVec[k].x), y=kDVec[k].density, Geom.line, adjust_default_theme_color(defaultThemeOverride, colourVec[k])) for k = 1:4 ] #Construct plot layers using kernel densities
+    #layerVec = Vector{Gadfly.Layer}[ layer(x=collect(kDVec[k].x), y=kDVec[k].density, Geom.line, adjust_default_theme_color(defaultThemeOverride, colourVec[k])) for k = 1:4 ] #Construct plot layers using kernel densities
     println("Plotting kernel densities")
-    kernelPlot1 = plot(layerVec..., Guide.xlabel("Estimator value"), Guide.ylabel("Density"), Guide.manual_color_key(default_legend(["mean", string(tMeanProp1)*" trimmed mean", string(tMeanProp2)*" trimmed mean", "median"])...), defaultThemeOverride)
-    draw_local(kernelPlot1, "t_Dist_Estimator_Densities", dirPath=outputDir, fileType=:svg)
+    #kernelPlot1 = plot(layerVec..., Guide.xlabel("Estimator value"), Guide.ylabel("Density"), Guide.manual_color_key(default_legend(["mean", string(tMeanProp1)*" trimmed mean", string(tMeanProp2)*" trimmed mean", "median"])...), defaultThemeOverride)
+    #draw_local(kernelPlot1, "t_Dist_Estimator_Densities", dirPath=outputDir, fileType=:svg)
     println("Routine complete")
 end
 
 #--------------------------------------------
 # MEASURING TAIL FATNESS
 #--------------------------------------------
-function tail_fatness_and_kurtosis()
-    using Distributions, StatsBase
-    tDist = TDist(2) #Initiate t-distribution with 2 degrees of freedom
-    numObsVec = collect(10:10:1000)
-    numSim = 1000
-    #Simulate the kurtosis as a function of sample size for t-distribution with 2 degrees of freedom
-    simKurtosis = Array(Float64, length(numObsVec))
+function tail_fatness_and_kurtosis( ; numIter::Int=100, numObsVec::Vector{Int}=collect(20:20:200))
+    #Simulate the kurtosis and robust kurtosis as a function of sample size for t-distribution with 2 degrees of freedom
+	tDist = TDist(2) #Initiate t-distribution with 2 degrees of freedom
+    simKurtosisMat = Array(Float64, numIter, length(numObsVec))
+	simRobustKurtosisMat = Array(Float64, numIter, length(numObsVec))
     for k = 1:length(numObsVec)
-        simKurtosis[k] = mean(Float64[ kurtosis(rand(tDist, numObsVec[k])) for m = 1:numSim ])
+		for m = 1:numIter
+			tData = rand(tDist, numObsVec[k])
+        	simKurtosisMat[m, k] = kurtosis(tData)
+			simRobustKurtosisMat[m, k] = hogg_robust_kurt!(tData, sorted=false, numerTail=0.05, denomTail=0.5)
+		end
     end
-    #Simulate the robust measure of fat-tails as a function of sample size
-    #SEE Hogg (1974) Section 4 for the robust measure of tail fatness
-
-
+	simKurtosis = mean(simKurtosisMat, 1)
+	simRobustKurtosis = mean(simRobustKurtosisMat, 1)
 
     println(simKurtosis)
+	println(simRobustKurtosis)
+
 end
+
+
+
+#-------------------------------------------
+#
+#-------------------------------------------
 
 
 

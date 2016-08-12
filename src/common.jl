@@ -26,29 +26,46 @@ function median_sorted{T}(x::AbstractVector{T})
         return(x[Int((length(x)+1)/2)])
     end
 end
+#Hogg's robust measure of tail-fatness.
+function hogg_robust_kurt!{T}(x::Vector{T} ; sorted::Bool=false, numerTail::Float64=0.05, denomTail::Float64=0.5)
+    length(x) < 10 && error("Input must contain at least 10 observations")
+    !(0.0 < numerTail <= 0.2) && error("Non-sensible value for numerTail")
+    !(0.3 < denomTail <= 0.5) && error("Non-sensible value for denomTail")
+    numObsNumer = Int(ceil(numerTail * length(x)))
+    numObsDenom = Int(ceil(denomTail * length(x)))
+    !sorted && sort!(x)
+    numerLeft = mean(sub(x, 1:numObsNumer))
+    numerRight = mean(sub(x, length(x)-numObsNumer+1:length(x)))
+    denomLeft = mean(sub(x, 1:numObsDenom))
+    denomRight = mean(sub(x, length(x)-numObsDenom+1:length(x)))
+    return((numerRight - numerLeft) / (denomRight - denomLeft))
+end
+hogg_robust_kurt{T}(x::Vector{T} ; sorted::Bool=false, numerTail::Float64=0.05, denomTail::Float64=0.5) = sorted ? hogg_robust_kurt!(x, sorted=true, numerTail=numerTail, denomTail=denomTail) : hogg_robust_kurt!(deepcopy(x), sorted=false, numerTail=numerTail, denomTail=denomTail)
+
+
 
 #--------------------------------------------
 # PLOTTING FUNCTIONS USED THROUGHOUT
 #--------------------------------------------
-#Function for drawing plot to saved image file
-function draw_local(p::Plot, fileName::ASCIIString ; dirPath::ASCIIString="", fileType::Symbol=:png, width::Measure=40cm, height::Measure=20cm)
-	dirPath[end] != '/' && (dirPath = dirPath * "/")
-    !isdir(dirPath) && error("Input directory does not exist")
-    filePath = dirPath * fileName * "." * string(fileType)
-    if fileType == :svg     ; draw(SVG(filePath, width, height), p)
-	elseif fileType == :png ; draw(PNG(filePath, width, height), p)
-	elseif fileType == :pdf ; draw(PDF(filePath, width, height), p)
-	else                    ; error("Invalid fileType symbol")
-	end
-	return(filePath)
-end
-function adjust_default_theme_color(x::Theme, colourString::ASCIIString)
-    xC = deepcopy(x)
-    xC.default_color = parse(Compose.Colorant, colourString)
-    return(xC)
-end
-function default_legend(legendLabel::Vector{ASCIIString})
-	legendTitle = "Legend:"
-    length(legendLabel) > length(colourVec) && error("Default legend function cannot handle more than " * string(length(colourVec)) * " series")
-    return(legendTitle, legendLabel, deepcopy(colourVec[1:length(legendLabel)]))
-end
+# #Function for drawing plot to saved image file
+# function draw_local(p::Plot, fileName::ASCIIString ; dirPath::ASCIIString="", fileType::Symbol=:png, width::Measure=40cm, height::Measure=20cm)
+# 	dirPath[end] != '/' && (dirPath = dirPath * "/")
+#     !isdir(dirPath) && error("Input directory does not exist")
+#     filePath = dirPath * fileName * "." * string(fileType)
+#     if fileType == :svg     ; draw(SVG(filePath, width, height), p)
+# 	elseif fileType == :png ; draw(PNG(filePath, width, height), p)
+# 	elseif fileType == :pdf ; draw(PDF(filePath, width, height), p)
+# 	else                    ; error("Invalid fileType symbol")
+# 	end
+# 	return(filePath)
+# end
+# function adjust_default_theme_color(x::Theme, colourString::ASCIIString)
+#     xC = deepcopy(x)
+#     xC.default_color = parse(Compose.Colorant, colourString)
+#     return(xC)
+# end
+# function default_legend(legendLabel::Vector{ASCIIString})
+# 	legendTitle = "Legend:"
+#     length(legendLabel) > length(colourVec) && error("Default legend function cannot handle more than " * string(length(colourVec)) * " series")
+#     return(legendTitle, legendLabel, deepcopy(colourVec[1:length(legendLabel)]))
+# end
