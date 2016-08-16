@@ -26,10 +26,10 @@ using Base.Dates, StatsBase, KernelDensity, Distributions
 const outputDir = "/home/"*ENV["USER"]*"/robust_stats_tutorial_output/"::ASCIIString
 
 #Fixed theme override for all plots and colour order for multivariate plots
-# const defaultThemeOverride = Theme(key_title_font_size=14pt, key_label_font_size=14pt, minor_label_font_size=14pt, major_label_font_size=17pt, key_title_font_size=17pt)::Theme
-# const colourVec = ["blue", "green", "red", "black", "purple", "dark blue", "darkgreen", "gray", "brown", "cyan",
-# 				   "violetred", "blue2", "orange", "green2", "darkred", "gray20", "chocolate", "brown2", "darkorange", "gray40",
-# 				   "cadetblue", "violet", "green4", "brown4", "blue4"]::Vector{ASCIIString} #A vector of 25 colours to use in plots
+const defaultThemeOverride = Theme(key_title_font_size=14pt, key_label_font_size=14pt, minor_label_font_size=14pt, major_label_font_size=17pt, key_title_font_size=17pt)::Theme
+const colourVec = ["blue", "green", "red", "black", "purple", "dark blue", "darkgreen", "gray", "brown", "cyan",
+				   "violetred", "blue2", "orange", "green2", "darkred", "gray20", "chocolate", "brown2", "darkorange", "gray40",
+				   "cadetblue", "violet", "green4", "brown4", "blue4"]::Vector{ASCIIString} #A vector of 25 colours to use in plots
 
 
 #Create output directory
@@ -41,6 +41,7 @@ include("common.jl")
 #--------------------------------------------
 # SIMPLE EXAMPLE WITH t-DISTRIBUTION
 #--------------------------------------------
+#Plot of data from t-distribution with DoF = 2. Set specific seed. Show how much better we can do by eliminating a couple of observations.
 function t_dist_simple_example()
     numObs = 20 #Number of observations to use in this subsection
     tDist = TDist(2) #Initiate t-distribution with 2 degrees of freedom
@@ -54,16 +55,17 @@ function t_dist_simple_example()
     yLower = mean(tDataSort[numLower:numLower+1]) #Get the midpoint of the last lower cut observation and the first lower kept observation
     yUpper = mean(tDataSort[end-numUpper:end-numUpper+1]) #Get the midpoint of the last upper kept observation and the first upper cut observation
     println("Plotting data")
-    #dataPlot1 = plot(x=collect(1:numObs), y=tData, Geom.point, defaultThemeOverride)
-    #dataPlot2 = plot(x=collect(1:numObs), y=tData, yintercept=[yLower, yUpper], Geom.point, Geom.hline, defaultThemeOverride)
-    #draw_local(dataPlot1, "t_Dist_Data", dirPath=outputDir, fileType=:svg)
-    #draw_local(dataPlot2, "t_Dist_Data_With_Trim_Cutoff", dirPath=outputDir, fileType=:svg)
+    dataPlot1 = plot(x=collect(1:numObs), y=tData, Geom.point, defaultThemeOverride)
+    dataPlot2 = plot(x=collect(1:numObs), y=tData, yintercept=[yLower, yUpper], Geom.point, Geom.hline, defaultThemeOverride)
+    draw_local(dataPlot1, "t_Dist_Data", dirPath=outputDir, fileType=:svg)
+    draw_local(dataPlot2, "t_Dist_Data_With_Trim_Cutoff", dirPath=outputDir, fileType=:svg)
     println("Routine complete")
 end
 
 #--------------------------------------------
 # ESTIMATOR DENSITIES WITH t-DISTRIBUTION
 #--------------------------------------------
+#Simulate empirical densities of sample means, sample medians, and sample trimmed means, for t-distribution with DoF = 2
 function t_dist_estimator_densities( ; numIter::Int=5000, numObs::Int=50, tMeanProp1::Float64=0.1, tMeanProp2::Float64=0.5)
     tDist = TDist(2) #Initiate t-distribution with 2 degrees of freedom
     estVecVec = Vector{Float64}[ Array(Float64, numIter) for k = 1:4 ] #Pre-allocate structure to hold sample estimators
@@ -79,16 +81,19 @@ function t_dist_estimator_densities( ; numIter::Int=5000, numObs::Int=50, tMeanP
     end
     println("Building kernel densities")
     kDVec = KernelDensity.UnivariateKDE{FloatRange{Float64}}[ kde(estVecVec[k], boundary=(-1.0, 1.0)) for k = 1:4 ] #Get kernel density for each estimator
-    #layerVec = Vector{Gadfly.Layer}[ layer(x=collect(kDVec[k].x), y=kDVec[k].density, Geom.line, adjust_default_theme_color(defaultThemeOverride, colourVec[k])) for k = 1:4 ] #Construct plot layers using kernel densities
+    layerVec = Vector{Gadfly.Layer}[ layer(x=collect(kDVec[k].x), y=kDVec[k].density, Geom.line, adjust_default_theme_color(defaultThemeOverride, colourVec[k])) for k = 1:4 ] #Construct plot layers using kernel densities
     println("Plotting kernel densities")
-    #kernelPlot1 = plot(layerVec..., Guide.xlabel("Estimator value"), Guide.ylabel("Density"), Guide.manual_color_key(default_legend(["mean", string(tMeanProp1)*" trimmed mean", string(tMeanProp2)*" trimmed mean", "median"])...), defaultThemeOverride)
-    #draw_local(kernelPlot1, "t_Dist_Estimator_Densities", dirPath=outputDir, fileType=:svg)
+    kernelPlot1 = plot(layerVec..., Guide.xlabel("Estimator value"), Guide.ylabel("Density"), Guide.manual_color_key(default_legend(["mean", string(tMeanProp1)*" trimmed mean", string(tMeanProp2)*" trimmed mean", "median"])...), defaultThemeOverride)
+    draw_local(kernelPlot1, "t_Dist_Estimator_Densities", dirPath=outputDir, fileType=:svg)
     println("Routine complete")
 end
 
 #--------------------------------------------
 # MEASURING TAIL FATNESS
 #--------------------------------------------
+#Discuss fat-tails of t-distribution with DoF = 2. Explain why kurtosis, although the common characterisation, is not an ideal measure of how fat the tails are. Possibly plot sample kurtosis as a function of sample size.
+#Introduce alternative robust measure of fat-tails and show it is stable relative to sample kurtosis
+#Specifically, show that sample kurtosis diverges as sample size increases if population kurtosis is undefined
 function tail_fatness_and_kurtosis( ; numIter::Int=100, numObsVec::Vector{Int}=collect(20:20:200))
     #Simulate the kurtosis and robust kurtosis as a function of sample size for t-distribution with 2 degrees of freedom
 	tDist = TDist(2) #Initiate t-distribution with 2 degrees of freedom
@@ -101,12 +106,31 @@ function tail_fatness_and_kurtosis( ; numIter::Int=100, numObsVec::Vector{Int}=c
 			simRobustKurtosisMat[m, k] = hogg_robust_kurt!(tData, sorted=false, numerTail=0.05, denomTail=0.5)
 		end
     end
-	simKurtosis = mean(simKurtosisMat, 1)
-	simRobustKurtosis = mean(simRobustKurtosisMat, 1)
+	simKurtosis = vec(mean(simKurtosisMat, 1))
+	simRobustKurtosis = vec(mean(simRobustKurtosisMat, 1))
+    estVec = Vector{Float64}[simKurtosis, simRobustKurtosis]
+    layerVec = Vector{Gadfly.Layer}[ layer(x=numObsVec, y=estVec[k], Geom.line, adjust_default_theme_color(defaultThemeOverride, colourVec[k])) for k = 1:2 ] #Construct plot layers for the two estimators
+    estPlot1 = plot(layerVec..., Guide.xlabel("Number of observations"), Guide.ylabel("Simulated average estimator value"), Guide.manual_color_key(default_legend(["Sample kurtosis", "Robust measure"])...), defaultThemeOverride)
+    println("Plotting estimators...")
+    draw_local(estPlot1, "t_Dist_Kurtosis_Versus_Robust_Kurtosis", dirPath=outputDir, fileType=:svg)
+end
 
-    println(simKurtosis)
-	println(simRobustKurtosis)
 
+#--------------------------------------------
+# TAIL FATNESS OF FINANCIAL DATA VERSUS NORMAL
+#--------------------------------------------
+#Compare robust measure of fat-tails for lots of different stocks to value under Normal distribution and value under t-distribution with 2 DoF
+#Discuss how we can generate unconditional fat-tails using a conditional Normal model with time-varying variance. Plot robust measure of fat-tails for returns standardised by realised variance type estimator. Show how it is close to Normal.
+#Conclude by comparing mean of financial returns to trimmed mean to median.
+function tail_fatness_financial_data()
+    secList = ["AMP", "ANZ", "BHP", "CBA", "CCL", "CWN", "JBH", "LLC", "MQG", "NAB", "RIO", "SUN", "TLS", "TOL", "WBC", "WES", "WOW"]
+    secRet = Vector{Float64}[ readcsv(secList[j]*"_Close_Return.csv", Float64) for j = 1:length(secList) ]
+    hoggEst = Float64[ hogg_robust_kurt(secRet[j]) for j = 1:length(secList) ]
+    tDist = TDist(2)
+    tDistHoggEst = mean(Float64[ rand(tDist, 100) for k = 1:1000 ])
+    normalHoggEst =mean(Float64[ randn(100) for k = 1:1000 ])
+    estPlot = plot(x=secList, y=hoggEst, yintercept=[normalHoggEst, tDistHoggEst], Geom.point, Geom.hline, defaultThemeOverride)
+    draw_local(estPlot, "Robust_Estimator_of_Daily_Financial_Returns", dirPath=outputDir, fileType=:svg)
 end
 
 
