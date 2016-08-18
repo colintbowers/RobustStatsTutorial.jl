@@ -121,17 +121,32 @@ end
 #--------------------------------------------
 #Compare robust measure of fat-tails for lots of different stocks to value under Normal distribution and value under t-distribution with 2 DoF
 #Discuss how we can generate unconditional fat-tails using a conditional Normal model with time-varying variance. Plot robust measure of fat-tails for returns standardised by realised variance type estimator. Show how it is close to Normal.
-#Conclude by comparing mean of financial returns to trimmed mean to median.
+#Conclude by comparing mean of financial returns to trimmed mean and median.
 function tail_fatness_financial_data()
-    secList = ["AMP", "ANZ", "BHP", "CBA", "CCL", "CWN", "JBH", "LLC", "MQG", "NAB", "RIO", "SUN", "TLS", "TOL", "WBC", "WES", "WOW"]
-    secRet = Vector{Float64}[ readcsv(secList[j]*"_Close_Return.csv", Float64) for j = 1:length(secList) ]
+    secList = ["AMP", "ANZ", "BHP", "CBA", "CCL", "JBH", "LLC", "NAB", "RIO", "SUN", "TLS", "TOL", "WBC", "WES", "WOW"]
+	#Get robust measure of return data and compare it to Normal and t-Dist with 2 DoF
+	secRet = read_local(secList, :return)
     hoggEst = Float64[ hogg_robust_kurt(secRet[j]) for j = 1:length(secList) ]
     tDist = TDist(2)
     tDistHoggEst = mean(Float64[ rand(tDist, 100) for k = 1:1000 ])
     normalHoggEst =mean(Float64[ randn(100) for k = 1:1000 ])
-    estPlot = plot(x=secList, y=hoggEst, yintercept=[normalHoggEst, tDistHoggEst], Geom.point, Geom.hline, defaultThemeOverride)
-    draw_local(estPlot, "Robust_Estimator_of_Daily_Financial_Returns", dirPath=outputDir, fileType=:svg)
+    estPlot1 = plot(x=secList, y=hoggEst, yintercept=[normalHoggEst, tDistHoggEst], Geom.point, Geom.hline, defaultThemeOverride)
+    draw_local(estPlot1, "Robust_Estimator_of_Daily_Financial_Returns", dirPath=outputDir, fileType=:svg)
+	#Standardise returns by realised variance and then repeat above exercise
+	secVar = read_local(secList, :realisedvariance)
+	for j = 1:length(secVar)
+		for n = 1:length(secVar[j])
+			secVar[j][n] *= 2.0 #Rudimentary rule for scaling realised variance up to close-to-close interval (estimate is good for most stocks, although not so good for dual-listed BHP and RIO)
+		end
+	end
+	secRetStd = Vector{Float64}[ secRet[j] ./ sqrt(secVar[j]) for j = 1:length(secList) ]
+	hoggEstStd = Float64[ hogg_robust_kurt(secRetStd[j]) for j = 1:length(secList) ]
+	estPlot2 = plot(x=secList, y=hoggEstStd, yintercept=[normalHoggEst, tDistHoggEst], Geom.point, Geom.hline, defaultThemeOverride)
+    draw_local(estPlot2, "Robust_Estimator_of_Standardised_Daily_Financial_Returns", dirPath=outputDir, fileType=:svg)
+	#Compare mean of financial returns to trimmed mean and median
+
 end
+
 
 
 

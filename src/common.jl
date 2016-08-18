@@ -43,29 +43,54 @@ end
 hogg_robust_kurt{T}(x::Vector{T} ; sorted::Bool=false, numerTail::Float64=0.05, denomTail::Float64=0.5) = sorted ? hogg_robust_kurt!(x, sorted=true, numerTail=numerTail, denomTail=denomTail) : hogg_robust_kurt!(deepcopy(x), sorted=false, numerTail=numerTail, denomTail=denomTail)
 
 
+#--------------------------------------------
+# DATA READING FUNCTIONS USED THROUGHOUT
+#--------------------------------------------
+function read_local(secList::Vector{ASCIIString}, dataType::Symbol ; checkLength::Int=0)
+    if dataType == :return
+        x = Vector{Float64}[ readcsv(pwd()*"/data/ASX_"*secList[j]*"_Return-Trade_uMarketCloseAuction_Bow.csv", Float64) for j = 1:length(secList) ]
+    elseif dataType == :realisedvariance
+        x = Vector{Float64}[ readcsv(pwd()*"/data/ASX_"*secList[j]*"_RealisedVariance-5Minute-BidAskMidpoing_uFirstToLast_Bow.csv", Float64) for j = 1:length(secList) ]
+    else
+        error("Invalid data type")
+    end
+    if checkLength != 0
+        any(Int[ length(x[j]) for j = 1:length(x) ] .!= checkLength) && error("Invalid data length")
+    end
+    return(x)
+end
+function read_local(dataType::Symbol)
+    if dataType == :calendar
+        x = readcsv(pwd()*"/data/Calendar.csv", DateTime)
+    else
+        error("Invalid data type")
+    end
+    return(x)
+end
+
 
 #--------------------------------------------
 # PLOTTING FUNCTIONS USED THROUGHOUT
 #--------------------------------------------
-# #Function for drawing plot to saved image file
-# function draw_local(p::Plot, fileName::ASCIIString ; dirPath::ASCIIString="", fileType::Symbol=:png, width::Measure=40cm, height::Measure=20cm)
-# 	dirPath[end] != '/' && (dirPath = dirPath * "/")
-#     !isdir(dirPath) && error("Input directory does not exist")
-#     filePath = dirPath * fileName * "." * string(fileType)
-#     if fileType == :svg     ; draw(SVG(filePath, width, height), p)
-# 	elseif fileType == :png ; draw(PNG(filePath, width, height), p)
-# 	elseif fileType == :pdf ; draw(PDF(filePath, width, height), p)
-# 	else                    ; error("Invalid fileType symbol")
-# 	end
-# 	return(filePath)
-# end
-# function adjust_default_theme_color(x::Theme, colourString::ASCIIString)
-#     xC = deepcopy(x)
-#     xC.default_color = parse(Compose.Colorant, colourString)
-#     return(xC)
-# end
-# function default_legend(legendLabel::Vector{ASCIIString})
-# 	legendTitle = "Legend:"
-#     length(legendLabel) > length(colourVec) && error("Default legend function cannot handle more than " * string(length(colourVec)) * " series")
-#     return(legendTitle, legendLabel, deepcopy(colourVec[1:length(legendLabel)]))
-# end
+#Function for drawing plot to saved image file
+function draw_local(p::Plot, fileName::ASCIIString ; dirPath::ASCIIString="", fileType::Symbol=:png, width::Measure=40cm, height::Measure=20cm)
+	dirPath[end] != '/' && (dirPath = dirPath * "/")
+    !isdir(dirPath) && error("Input directory does not exist")
+    filePath = dirPath * fileName * "." * string(fileType)
+    if fileType == :svg     ; draw(SVG(filePath, width, height), p)
+	elseif fileType == :png ; draw(PNG(filePath, width, height), p)
+	elseif fileType == :pdf ; draw(PDF(filePath, width, height), p)
+	else                    ; error("Invalid fileType symbol")
+	end
+	return(filePath)
+end
+function adjust_default_theme_color(x::Theme, colourString::ASCIIString)
+    xC = deepcopy(x)
+    xC.default_color = parse(Compose.Colorant, colourString)
+    return(xC)
+end
+function default_legend(legendLabel::Vector{ASCIIString})
+	legendTitle = "Legend:"
+    length(legendLabel) > length(colourVec) && error("Default legend function cannot handle more than " * string(length(colourVec)) * " series")
+    return(legendTitle, legendLabel, deepcopy(colourVec[1:length(legendLabel)]))
+end
