@@ -147,8 +147,13 @@ function tail_fatness_financial_data( ; scaleMethod::Symbol=:historicvariance)
 	println("Drawing plot 2")
 	estPlot2 = plot(x=secList, y=hoggEstStd, yintercept=[normalHoggEst, tDistHoggEst], Geom.point, Geom.hline, defaultThemeOverride)
     draw_local(estPlot2, "Robust_Kurtosis_of_Standardised_Daily_Financial_Returns", dirPath=outputDir, fileType=:svg)
-	#NOT INTERESTING
-	# #Compare mean of financial returns to trimmed mean and median
+	#Compare mean of financial returns to trimmed mean and median
+	
+	meanEst = Float64[ mean(secRet[j][n:n+199]) for j = 1:length(secRet), n = 1:200:length(secRet[1]) ]
+	tmeanEst = Float64[ tmean(secRet[j][n:n+199], 0.4) for j = 1:length(secRet), n = 1:200:length(secRet[1]) ]
+	estPlot3 = plot(x=["mean", "trimmed mean (0.4)"], y=hcat(meanEst[:, 1], tmeanEst[:, 1]), Geom.boxplot)
+
+
 	# secLocationEst = Array(Float64, length(secRet), 2)
 	# for j = 1:length(secRet)
 	# 	secLocationEst[j, 1] = mean(secRet[j])
@@ -158,7 +163,7 @@ function tail_fatness_financial_data( ; scaleMethod::Symbol=:historicvariance)
 	# layerVec = Vector{Gadfly.Layer}[ layer(x=secList, y=vec(secLocationEst[:, k]), Geom.point, adjust_default_theme_color(defaultThemeOverride, colourVec[k])) for k = 1:2 ]
 	# estPlot3 = plot(layerVec..., Guide.xlabel("Security"), Guide.ylabel("Location estimate"), Guide.manual_color_key(default_legend(["Sample mean", "Trimmed mean (0.4)"])...), defaultThemeOverride)
 	# draw_local(estPlot3, "Robust_Mean_of_Daily_Financial_Returns", dirPath=outputDir, fileType=:svg)
-	# println("Routine complete")
+	println("Routine complete")
 end
 
 

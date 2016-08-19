@@ -101,3 +101,9 @@ function default_legend(legendLabel::Vector{ASCIIString})
     length(legendLabel) > length(colourVec) && error("Default legend function cannot handle more than " * string(length(colourVec)) * " series")
     return(legendTitle, legendLabel, deepcopy(colourVec[1:length(legendLabel)]))
 end
+
+#--------------------------------------------
+# OTHER COMMON FUNCTIONS
+#--------------------------------------------
+arr_to_mat{T}(x::Vector{Vector{T}}) = T[ x[j][k] for j = 1:length(x), k = 1:length(x[1])]
+mat_to_arr{T}(x::Matrix{T}) = Vector{T}[ x[:, j] for j = 1:size(x, 2) ]
