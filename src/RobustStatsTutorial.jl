@@ -19,17 +19,20 @@ module RobustStatsTutorial
 
 
 #Load relevant modules
-#using Base.Dates, Compose, Gadfly, StatsBase, KernelDensity, Distributions
-using Base.Dates, StatsBase, KernelDensity, Distributions
+using Base.Dates, Compose, Gadfly, StatsBase, KernelDensity, Distributions
 
 #Fixed output directory based on Linux OS. Will need to be adjusted for Windows or Mac users.
 const outputDir = "/home/"*ENV["USER"]*"/robust_stats_tutorial_output/"::ASCIIString
+const dataDir = "/home/"*ENV["USER"]*"/.julia/v0.4/RobustStatsTutorial/data/"::ASCIIString
 
 #Fixed theme override for all plots and colour order for multivariate plots
 const defaultThemeOverride = Theme(key_title_font_size=14pt, key_label_font_size=14pt, minor_label_font_size=14pt, major_label_font_size=17pt, key_title_font_size=17pt)::Theme
 const colourVec = ["blue", "green", "red", "black", "purple", "dark blue", "darkgreen", "gray", "brown", "cyan",
 				   "violetred", "blue2", "orange", "green2", "darkred", "gray20", "chocolate", "brown2", "darkorange", "gray40",
 				   "cadetblue", "violet", "green4", "brown4", "blue4"]::Vector{ASCIIString} #A vector of 25 colours to use in plots
+
+#Security list used throughout the tutorial
+const secList = ["AMP", "ANZ", "BHP", "CBA", "CCL", "JBH", "LLC", "NAB", "RIO", "SUN", "TLS", "TOL", "WBC", "WES", "WOW"]::Vector{ASCIIString}
 
 
 #Create output directory
@@ -113,6 +116,7 @@ function tail_fatness_and_kurtosis( ; numIter::Int=100, numObsVec::Vector{Int}=c
     estPlot1 = plot(layerVec..., Guide.xlabel("Number of observations"), Guide.ylabel("Simulated average estimator value"), Guide.manual_color_key(default_legend(["Sample kurtosis", "Robust measure"])...), defaultThemeOverride)
     println("Plotting estimators...")
     draw_local(estPlot1, "t_Dist_Kurtosis_Versus_Robust_Kurtosis", dirPath=outputDir, fileType=:svg)
+	println("Routine complete")
 end
 
 
@@ -122,29 +126,39 @@ end
 #Compare robust measure of fat-tails for lots of different stocks to value under Normal distribution and value under t-distribution with 2 DoF
 #Discuss how we can generate unconditional fat-tails using a conditional Normal model with time-varying variance. Plot robust measure of fat-tails for returns standardised by realised variance type estimator. Show how it is close to Normal.
 #Conclude by comparing mean of financial returns to trimmed mean and median.
-function tail_fatness_financial_data()
-    secList = ["AMP", "ANZ", "BHP", "CBA", "CCL", "JBH", "LLC", "NAB", "RIO", "SUN", "TLS", "TOL", "WBC", "WES", "WOW"]
+function tail_fatness_financial_data( ; scaleMethod::Symbol=:historicvariance)
 	#Get robust measure of return data and compare it to Normal and t-Dist with 2 DoF
 	secRet = read_local(secList, :return)
     hoggEst = Float64[ hogg_robust_kurt(secRet[j]) for j = 1:length(secList) ]
     tDist = TDist(2)
-    tDistHoggEst = mean(Float64[ rand(tDist, 100) for k = 1:1000 ])
-    normalHoggEst =mean(Float64[ randn(100) for k = 1:1000 ])
-    estPlot1 = plot(x=secList, y=hoggEst, yintercept=[normalHoggEst, tDistHoggEst], Geom.point, Geom.hline, defaultThemeOverride)
-    draw_local(estPlot1, "Robust_Estimator_of_Daily_Financial_Returns", dirPath=outputDir, fileType=:svg)
-	#Standardise returns by realised variance and then repeat above exercise
-	secVar = read_local(secList, :realisedvariance)
-	for j = 1:length(secVar)
-		for n = 1:length(secVar[j])
-			secVar[j][n] *= 2.0 #Rudimentary rule for scaling realised variance up to close-to-close interval (estimate is good for most stocks, although not so good for dual-listed BHP and RIO)
-		end
+    tDistHoggEst = mean(Float64[ hogg_robust_kurt(rand(tDist, 100)) for k = 1:1000 ])
+    normalHoggEst = mean(Float64[ hogg_robust_kurt(randn(100)) for k = 1:1000 ])
+	println("Drawing plot 1")
+	estPlot1 = plot(x=secList, y=hoggEst, yintercept=[normalHoggEst, tDistHoggEst], Geom.point, Geom.hline, defaultThemeOverride)
+    draw_local(estPlot1, "Robust_Kurtosis_of_Daily_Financial_Returns", dirPath=outputDir, fileType=:svg)
+	#Standardise returns by a variance estimate and then repeat above exercise
+	if scaleMethod == :historicvariance
+		secVar = Vector{Float64}[ historical_variance(secRet[k]) for k = 1:length(secRet) ]
+		secRetStd = Vector{Float64}[ secRet[j][end-length(secVar[j])+1:end] ./ sqrt(secVar[j]) for j = 1:length(secList) ]
+	else
+		error("Invalid scaleMethod")
 	end
-	secRetStd = Vector{Float64}[ secRet[j] ./ sqrt(secVar[j]) for j = 1:length(secList) ]
 	hoggEstStd = Float64[ hogg_robust_kurt(secRetStd[j]) for j = 1:length(secList) ]
+	println("Drawing plot 2")
 	estPlot2 = plot(x=secList, y=hoggEstStd, yintercept=[normalHoggEst, tDistHoggEst], Geom.point, Geom.hline, defaultThemeOverride)
-    draw_local(estPlot2, "Robust_Estimator_of_Standardised_Daily_Financial_Returns", dirPath=outputDir, fileType=:svg)
-	#Compare mean of financial returns to trimmed mean and median
-
+    draw_local(estPlot2, "Robust_Kurtosis_of_Standardised_Daily_Financial_Returns", dirPath=outputDir, fileType=:svg)
+	#NOT INTERESTING
+	# #Compare mean of financial returns to trimmed mean and median
+	# secLocationEst = Array(Float64, length(secRet), 2)
+	# for j = 1:length(secRet)
+	# 	secLocationEst[j, 1] = mean(secRet[j])
+	# 	secLocationEst[j, 2] = tmean(secRet[j], 0.4)
+	# end
+	# println("Drawing plot 3")
+	# layerVec = Vector{Gadfly.Layer}[ layer(x=secList, y=vec(secLocationEst[:, k]), Geom.point, adjust_default_theme_color(defaultThemeOverride, colourVec[k])) for k = 1:2 ]
+	# estPlot3 = plot(layerVec..., Guide.xlabel("Security"), Guide.ylabel("Location estimate"), Guide.manual_color_key(default_legend(["Sample mean", "Trimmed mean (0.4)"])...), defaultThemeOverride)
+	# draw_local(estPlot3, "Robust_Mean_of_Daily_Financial_Returns", dirPath=outputDir, fileType=:svg)
+	# println("Routine complete")
 end
 
 

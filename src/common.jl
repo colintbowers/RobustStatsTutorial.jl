@@ -44,13 +44,20 @@ hogg_robust_kurt{T}(x::Vector{T} ; sorted::Bool=false, numerTail::Float64=0.05, 
 
 
 #--------------------------------------------
+# ROLLING WINDOW HISTORICAL VARIANCE
+#--------------------------------------------
+historical_variance{T<:Number}(r::AbstractVector{T}, lagWindow::Int=100) = (0 < lagWindow < length(r)) ? Float64[ var(sub(r, n-lagWindow+1:n)) for n = lagWindow:length(r) ] : error("Invalid lagWindow")
+
+
+
+#--------------------------------------------
 # DATA READING FUNCTIONS USED THROUGHOUT
 #--------------------------------------------
 function read_local(secList::Vector{ASCIIString}, dataType::Symbol ; checkLength::Int=0)
     if dataType == :return
-        x = Vector{Float64}[ readcsv(pwd()*"/data/ASX_"*secList[j]*"_Return-Trade_uMarketCloseAuction_Bow.csv", Float64) for j = 1:length(secList) ]
+        x = Vector{Float64}[ vec(readcsv(dataDir*"ASX_"*secList[j]*"_Return-Trade_uMarketCloseAuction_Bow.csv", Float64)) for j = 1:length(secList) ]
     elseif dataType == :realisedvariance
-        x = Vector{Float64}[ readcsv(pwd()*"/data/ASX_"*secList[j]*"_RealisedVariance-5Minute-BidAskMidpoing_uFirstToLast_Bow.csv", Float64) for j = 1:length(secList) ]
+        x = Vector{Float64}[ vec(readcsv(dataDir*"ASX_"*secList[j]*"_RealisedVariance-5Minute-BidAskMidpoint_uFirstToLast_Bow.csv", Float64)) for j = 1:length(secList) ]
     else
         error("Invalid data type")
     end
@@ -61,7 +68,7 @@ function read_local(secList::Vector{ASCIIString}, dataType::Symbol ; checkLength
 end
 function read_local(dataType::Symbol)
     if dataType == :calendar
-        x = readcsv(pwd()*"/data/Calendar.csv", DateTime)
+        x = vec(readcsv(dataDir*"Calendar.csv", DateTime))
     else
         error("Invalid data type")
     end
