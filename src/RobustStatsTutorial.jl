@@ -19,7 +19,9 @@ module RobustStatsTutorial
 
 
 #Load relevant modules
-using Base.Dates, Compose, Gadfly, StatsBase, KernelDensity, Distributions
+using Base.Dates, Compose, Gadfly, StatsBase, KernelDensity, Distributions, DependentBootstrap
+#WARNING: DependentBootstrap is not currently an official package (although I am the author). To install, use:
+#pkg.clone("https://github.com/colintbowers/DependentBootstrap.jl.git")
 
 #Fixed output directory based on Linux OS. Will need to be adjusted for Windows or Mac users.
 const outputDir = "/home/"*ENV["USER"]*"/robust_stats_tutorial_output/"::ASCIIString
@@ -33,7 +35,6 @@ const colourVec = ["blue", "green", "red", "black", "purple", "dark blue", "dark
 
 #Security list used throughout the tutorial
 const secList = ["AMP", "ANZ", "BHP", "CBA", "CCL", "JBH", "LLC", "NAB", "RIO", "SUN", "TLS", "TOL", "WBC", "WES", "WOW"]::Vector{ASCIIString}
-
 
 #Create output directory
 !isdir(outputDir) && mkdir(outputDir)
@@ -147,22 +148,16 @@ function tail_fatness_financial_data( ; scaleMethod::Symbol=:historicvariance)
 	println("Drawing plot 2")
 	estPlot2 = plot(x=secList, y=hoggEstStd, yintercept=[normalHoggEst, tDistHoggEst], Geom.point, Geom.hline, defaultThemeOverride)
     draw_local(estPlot2, "Robust_Kurtosis_of_Standardised_Daily_Financial_Returns", dirPath=outputDir, fileType=:svg)
-	#Compare mean of financial returns to trimmed mean and median
-	
-	meanEst = Float64[ mean(secRet[j][n:n+199]) for j = 1:length(secRet), n = 1:200:length(secRet[1]) ]
-	tmeanEst = Float64[ tmean(secRet[j][n:n+199], 0.4) for j = 1:length(secRet), n = 1:200:length(secRet[1]) ]
-	estPlot3 = plot(x=["mean", "trimmed mean (0.4)"], y=hcat(meanEst[:, 1], tmeanEst[:, 1]), Geom.boxplot)
-
-
-	# secLocationEst = Array(Float64, length(secRet), 2)
-	# for j = 1:length(secRet)
-	# 	secLocationEst[j, 1] = mean(secRet[j])
-	# 	secLocationEst[j, 2] = tmean(secRet[j], 0.4)
-	# end
-	# println("Drawing plot 3")
-	# layerVec = Vector{Gadfly.Layer}[ layer(x=secList, y=vec(secLocationEst[:, k]), Geom.point, adjust_default_theme_color(defaultThemeOverride, colourVec[k])) for k = 1:2 ]
-	# estPlot3 = plot(layerVec..., Guide.xlabel("Security"), Guide.ylabel("Location estimate"), Guide.manual_color_key(default_legend(["Sample mean", "Trimmed mean (0.4)"])...), defaultThemeOverride)
-	# draw_local(estPlot3, "Robust_Mean_of_Daily_Financial_Returns", dirPath=outputDir, fileType=:svg)
+	#Compare mean and trimmed mean on resampled financial returns
+	numResample = 1000
+	iNAB = find(secList .== "NAB")
+	length(iNAB) != 1 && error("Unable to find NAB data")
+	rBootNAB = dbootstrapdata(secRet[iNAB[1]], blockLength=4.0, numResample=numResample)
+	bootEst = Vector{Float64}[Float64[ 10000*mean(rBootNAB[:, m]) for m = 1:numResample ], Float64[ 10000*tmean(rBootNAB[:, m], 0.4) for m = 1:numResample ]]
+	kDVec = KernelDensity.UnivariateKDE{FloatRange{Float64}}[ kde(bootEst[k]) for k = 1:2 ]
+	layerVec = Vector{Gadfly.Layer}[ layer(x=collect(kDVec[k].x), y=kDVec[k].density, Geom.line, adjust_default_theme_color(defaultThemeOverride, colourVec[k])) for k = 1:2 ]
+	kernelPlot = plot(layerVec..., Guide.xlabel("Estimator value (basis points)"), Guide.ylabel("Density"), Guide.title("Location estimator densities for NAB return data"), Guide.manual_color_key(default_legend(["Mean", "Trimmed mean (0.4)"])...), defaultThemeOverride)
+	draw_local(kernelPlot, "NAB_Bootstrapped_Estimator_Density", dirPath=outputDir, fileType=:svg)
 	println("Routine complete")
 end
 
