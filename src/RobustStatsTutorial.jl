@@ -148,16 +148,17 @@ function tail_fatness_financial_data( ; scaleMethod::Symbol=:historicvariance)
 	println("Drawing plot 2")
 	estPlot2 = plot(x=secList, y=hoggEstStd, yintercept=[normalHoggEst, tDistHoggEst], Geom.point, Geom.hline, defaultThemeOverride)
     draw_local(estPlot2, "Robust_Kurtosis_of_Standardised_Daily_Financial_Returns", dirPath=outputDir, fileType=:svg)
-	#Compare mean and trimmed mean on resampled financial returns
+	#Compare mean and trimmed mean on resampled financial returns (use NAB since it had the unconditionally fattest tails based on above analysis)
 	numResample = 1000
 	iNAB = find(secList .== "NAB")
 	length(iNAB) != 1 && error("Unable to find NAB data")
-	rBootNAB = dbootstrapdata(secRet[iNAB[1]], blockLength=4.0, numResample=numResample)
+	rNABCent = secRet[iNAB[1]] - mean(secRet[iNAB[1]]) #Centred so re-sampled data has true mean of zero
+	rBootNAB = dbootstrapdata(rNABCent, blockLength=4.0, numResample=numResample)
 	bootEst = Vector{Float64}[Float64[ 10000*mean(rBootNAB[:, m]) for m = 1:numResample ], Float64[ 10000*tmean(rBootNAB[:, m], 0.4) for m = 1:numResample ]]
 	kDVec = KernelDensity.UnivariateKDE{FloatRange{Float64}}[ kde(bootEst[k]) for k = 1:2 ]
 	layerVec = Vector{Gadfly.Layer}[ layer(x=collect(kDVec[k].x), y=kDVec[k].density, Geom.line, adjust_default_theme_color(defaultThemeOverride, colourVec[k])) for k = 1:2 ]
 	kernelPlot = plot(layerVec..., Guide.xlabel("Estimator value (basis points)"), Guide.ylabel("Density"), Guide.title("Location estimator densities for NAB return data"), Guide.manual_color_key(default_legend(["Mean", "Trimmed mean (0.4)"])...), defaultThemeOverride)
-	draw_local(kernelPlot, "NAB_Bootstrapped_Estimator_Density", dirPath=outputDir, fileType=:svg)
+	draw_local(kernelPlot, "NAB_Bootstrapped_Location_Estimator_Density", dirPath=outputDir, fileType=:svg)
 	println("Routine complete")
 end
 
