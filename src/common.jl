@@ -42,7 +42,6 @@ function hogg_robust_kurt!{T}(x::Vector{T} ; sorted::Bool=false, numerTail::Floa
 end
 hogg_robust_kurt{T}(x::Vector{T} ; sorted::Bool=false, numerTail::Float64=0.05, denomTail::Float64=0.5) = sorted ? hogg_robust_kurt!(x, sorted=true, numerTail=numerTail, denomTail=denomTail) : hogg_robust_kurt!(deepcopy(x), sorted=false, numerTail=numerTail, denomTail=denomTail)
 
-
 #--------------------------------------------
 # ROLLING WINDOW HISTORICAL VARIANCE
 #--------------------------------------------
@@ -107,3 +106,4 @@ end
 #--------------------------------------------
 arr_to_mat{T}(x::Vector{Vector{T}}) = T[ x[j][k] for j = 1:length(x), k = 1:length(x[1])]
 mat_to_arr{T}(x::Matrix{T}) = Vector{T}[ x[:, j] for j = 1:size(x, 2) ]
+julia_version_dir() = "v"*string(VERSION.major)*"."*string(VERSION.minor)
