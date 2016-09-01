@@ -189,18 +189,30 @@ end
 #-------------------------------------------
 # ROBUST PREDICTION OF FINANCIAL RETURNS
 #-------------------------------------------
-function return_prediction_financial_data( ; blockLength::Float64=4.0)
-	#Read in variance proxy
-	varNAB = read_local(["NAB"], :realisedvariance)[1]
+function return_prediction_financial_data( ; blockLength::Float64=4.0, numResample::Int=1000, varProxyMethod::Symbol=:historicvariance, numObs::Int=2000, rSquared::Float64=0.05, a::Float64=0.0, lag::Int=17)
+	#Get variance proxy
+	println("Reading data")
+	if varProxyMethod == :realisedvariance
+		v = read_local(["NAB"], :realisedvariance)[1]
+	elseif varProxyMethod == :historicvariance
+		rNAB = read_local(["NAB"], :return)[1]
+		v = historical_variance(rNAB, lag)
+	else
+		error("Invalid varProxyMethod")
+	end
 	#Simuate returns, signal, error term, constant and coefficient
-	(r, s, e, a, b) = simulate_signal_and_returns(varNAB, rSquared=0.05, a=0.0)
+	println("Simulating and bootstrapping")
+	(r, s, e, a, b) = simulate_signal_and_returns(v, rSquared=rSquared, a=a)
 	#Resample r, x, and e
-	numResample = 1000
-	inds = dbootstrapindex(length(r), numResample=numResample, blockLength=blockLength)
+	inds = dbootstrapindex(length(r), blockLength, numResample=numResample)
 	rBoot = r[inds]
-	sBoot = x[inds]
+	sBoot = s[inds]
 	eBoot = e[inds]
+	hoggVec = Float64[ hogg_robust_kurt(rBoot[:, m]) for m = 1:numResample ]
+	qProb = Float64[0.05, 0.25, 0.5, 0.75, 0.95]
+	hoggVecQ = quantile(hoggVec, qProb)
 	#Run regressions on the resampled data using multiple methods and get plot of estimated coefficients
+	println("Estimating coefficients on bootstrapped data")
 	coefLS = Array(Vector{Float64}, numResample)
 	coefLAD = Array(Vector{Float64}, numResample)
 	rSqLS = Array(Float64, numResample)
@@ -210,33 +222,44 @@ function return_prediction_financial_data( ; blockLength::Float64=4.0)
 		x = [ones(Float64, length(y)) sBoot[:, m]]
 		coefLS[m] = x \ y
 		(coefLAD[m], _, _) = least_absolute_deviation(y, x)
-		eLS = y - x * coefLS[m]'
-		eLAD = y - x * coefLAD[m]'
+		eLS = y - x * coefLS[m]
+		eLAD = y - x * coefLAD[m]
 		tSS = sumabs2(y)
 		rSqLS[m] = 1 - sumabs2(eLS) / tSS
 		rSqLAD[m] = 1 - sumabs2(eLAD) / tSS
 	end
 	#Get kernel density plot of estimated coefficients (and include true value)
+	println("Building coefficient kernel densities")
 	aArr = Vector{Float64}[Float64[ coefLS[m][1] for m = 1:numResample ], Float64[ coefLAD[m][1] for m = 1:numResample ]]
 	bArr = Vector{Float64}[Float64[ coefLS[m][2] for m = 1:numResample ], Float64[ coefLAD[m][2] for m = 1:numResample ]]
 	aKDVec = KernelDensity.UnivariateKDE{FloatRange{Float64}}[ kde(aArr[k]) for k = 1:2 ]
 	bKDVec = KernelDensity.UnivariateKDE{FloatRange{Float64}}[ kde(bArr[k]) for k = 1:2 ]
 	aLayerVec = Vector{Gadfly.Layer}[ layer(x=collect(aKDVec[k].x), y=aKDVec[k].density, Geom.line, adjust_default_theme_color(defaultThemeOverride, colourVec[k])) for k = 1:2 ]
 	bLayerVec = Vector{Gadfly.Layer}[ layer(x=collect(bKDVec[k].x), y=bKDVec[k].density, Geom.line, adjust_default_theme_color(defaultThemeOverride, colourVec[k])) for k = 1:2 ]
-	aKernelPlot = plot(aLayerVec..., Guide.xlabel("Regression constant"), Guide.ylabel("Density"), Guide.title("Density of regression constant"), Guide.manual_color_key(default_legend(["Least squares", "Least absolute deviations"])...), defaultThemeOverride)
-	bKernelPlot = plot(bLayerVec..., Guide.xlabel("Regression coefficient"), Guide.ylabel("Density"), Guide.title("Density of regression coefficient"), Guide.manual_color_key(default_legend(["Least squares", "Least absolute deviations"])...), defaultThemeOverride)
+	aKernelPlot = plot(aLayerVec..., Guide.xlabel("Regression constant"), Guide.ylabel("Density"), Guide.title("Density of regression constant (true value = " * string(a) * ")"), Guide.manual_color_key(default_legend(["Least squares", "Least absolute deviations"])...), defaultThemeOverride)
+	bKernelPlot = plot(bLayerVec..., Guide.xlabel("Regression coefficient"), Guide.ylabel("Density"), Guide.title("Density of regression coefficient (true value = " * string(b) * ")"), Guide.manual_color_key(default_legend(["Least squares", "Least absolute deviations"])...), defaultThemeOverride)
+	println("Plotting coefficient kernel densities")
 	draw_local(aKernelPlot, "Regression_constant_density", dirPath=outputDir, fileType=:svg)
 	draw_local(bKernelPlot, "Regression_coefficient_density", dirPath=outputDir, fileType=:svg)
 	#Get kernel density plot of r-squares
+	println("Building rSquared kernel density")
 	rSqArr = Vector{Float64}[rSqLS, rSqLAD]
 	rSqKDVec = KernelDensity.UnivariateKDE{FloatRange{Float64}}[ kde(rSqArr[k]) for k = 1:2 ]
 	rSqLayerVec = Vector{Gadfly.Layer}[ layer(x=collect(rSqKDVec[k].x), y=rSqKDVec[k].density, Geom.line, adjust_default_theme_color(defaultThemeOverride, colourVec[k])) for k = 1:2 ]
-	rSqKernelPlot = plot(rSqLayerVec..., Guide.xlabel("R-squared"), Guide.ylabel("Density"), Guide.title("Density of regression R-squared"), Guide.manual_color_key(default_legend(["Least squares", "Least absolute deviations"])...), defaultThemeOverride)
+	rSqKernelPlot = plot(rSqLayerVec..., Guide.xlabel("R-squared"), Guide.ylabel("Density"), Guide.title("Density of regression R-squared (true value = " * string(rSquared) * ")"), Guide.manual_color_key(default_legend(["Least squares", "Least absolute deviations"])...), defaultThemeOverride)
+	println("Plotting rSquared kernel density")
 	draw_local(rSqKernelPlot, "Regression_rSquared_density", dirPath=outputDir, fileType=:svg)
+	println("Hogg robust estimator quantiles (" * string(qProb) * ") = " * string(hoggVecQ))
+	println("Routine complete")
+	#Perform simulations using the estimated models
+
+	error("Use naive trading sim code to write this bit quickly")
+
+
 end
 function simulate_signal_and_returns(v::Vector{Float64} ; rSquared::Float64=0.05, a::Float64=0.0)
 	!(0.0 < rSquared < 1.0) && error("Invalid rSquared")
-	e = sqrt(v) * randn(length(v))
+	e = sqrt(v) .* randn(length(v))
 	x = randn(length(v))
 	residSumSq = sumabs2(e)
 	totalSumSq = residSumSq / (1 - rSquared)
@@ -248,16 +271,15 @@ function simulate_signal_and_returns(v::Vector{Float64} ; rSquared::Float64=0.05
 end
 function least_absolute_deviation(y::Vector{Float64}, x::Matrix{Float64})
 	#Build Opt object accepted by NLOpt
-	fObj = ((param, grad) -> sumabs(y - x*param') #Get local anonymous objective function
+	fObj = ((param, grad) -> sumabs(y - x*param)) #Get local anonymous objective function
 	initVal = zeros(Float64, size(x, 2))
 	opt = Opt(:LN_COBYLA, length(initVal)) #Derivative-free convergence method (yes I'm being lazy here)
 	xtol_rel!(opt, 1e-6)
 	min_objective!(opt, fObj)
 	#Perform optimisation
-	(objFuncOpt, paramOpt, flag) = optimize(opt, initialValue)
-	verbose && println("    Output flag = " * string(flag))
+	(objFuncOpt, paramOpt, flag) = optimize(opt, initVal)
 	checkNLoptFlag(flag)
-	return(paramOpt, objFuncOpt, y - x*paramOpt') #Return optimal parameter, objective function at optimum, and estimated errors
+	return(paramOpt, objFuncOpt, y - x*paramOpt) #Return optimal parameter, objective function at optimum, and estimated errors
 end
 function checkNLoptFlag(flag::Symbol)
 	flag == :SUCCESS && return(true)
