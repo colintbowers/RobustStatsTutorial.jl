@@ -182,14 +182,14 @@ function kernel_plot_robust_mean_versus_trimmed_mean(r::Vector{Float64} ; numRes
 	kDVec = KernelDensity.UnivariateKDE{FloatRange{Float64}}[ kde(bootEst[k]) for k = 1:2 ]
 	layerVec = Vector{Gadfly.Layer}[ layer(x=collect(kDVec[k].x), y=kDVec[k].density, Geom.line, adjust_default_theme_color(defaultThemeOverride, colourVec[k])) for k = 1:2 ]
 	secStr == "" ? (localTitle = "Location estimator densities for return data") : (localTitle = "Location estimator densities for " * secStr * " return data")
-	kernelPlot = plot(layerVec..., Guide.xlabel("Estimator value (basis points)"), Guide.ylabel("Density"), Guide.title("Location estimator densities for CCL return data"), Guide.manual_color_key(default_legend(["Mean", "Trimmed mean (0.4)"])...), defaultThemeOverride)
+	kernelPlot = plot(layerVec..., Guide.xlabel("Estimator value (basis points)"), Guide.ylabel("Density"), Guide.title(localTitle), Guide.manual_color_key(default_legend(["Mean", "Trimmed mean (0.4)"])...), defaultThemeOverride)
 end
 
 
 #-------------------------------------------
 # ROBUST PREDICTION OF FINANCIAL RETURNS
 #-------------------------------------------
-function return_prediction_financial_data( ; blockLength::Float64=4.0, numResample::Int=1000, varProxyMethod::Symbol=:historicvariance, numObs::Int=2000, rSquared::Float64=0.05, a::Float64=0.0, lag::Int=17)
+function return_prediction_financial_data( ; blockLength::Float64=4.0, numResample::Int=1000, varProxyMethod::Symbol=:historicvariance, numObs::Int=2000, rSquared::Float64=0.05, a::Float64=0.0, lag::Int=17, tCost::Float64=50.0, trimSimTail::Float64=0.05)
 	#Get variance proxy
 	println("Reading data")
 	if varProxyMethod == :realisedvariance
@@ -217,13 +217,17 @@ function return_prediction_financial_data( ; blockLength::Float64=4.0, numResamp
 	coefLAD = Array(Vector{Float64}, numResample)
 	rSqLS = Array(Float64, numResample)
 	rSqLAD = Array(Float64, numResample)
+	rHatLS = Array(Float64, length(r), numResample) #We save bootstrapped return forecasts for simulations later
+	rHatLAD = Array(Float64, length(r), numResample)
 	for m = 1:numResample
 		y = rBoot[:, m]
 		x = [ones(Float64, length(y)) sBoot[:, m]]
 		coefLS[m] = x \ y
 		(coefLAD[m], _, _) = least_absolute_deviation(y, x)
-		eLS = y - x * coefLS[m]
-		eLAD = y - x * coefLAD[m]
+		rHatLS[:, m] = x * coefLS[m]
+		rHatLAD[:, m] = x * coefLAD[m]
+		eLS = y - rHatLS[:, m]
+		eLAD = y - rHatLAD[:, m]
 		tSS = sumabs2(y)
 		rSqLS[m] = 1 - sumabs2(eLS) / tSS
 		rSqLAD[m] = 1 - sumabs2(eLAD) / tSS
@@ -250,12 +254,27 @@ function return_prediction_financial_data( ; blockLength::Float64=4.0, numResamp
 	println("Plotting rSquared kernel density")
 	draw_local(rSqKernelPlot, "Regression_rSquared_density", dirPath=outputDir, fileType=:svg)
 	println("Hogg robust estimator quantiles (" * string(qProb) * ") = " * string(hoggVecQ))
+	#Perform simulations using the estimated models and plot density of terminal values
+	# println("Performing simple trading simulations")
+	# terminalValLS = Array(Float64, numResample)
+	# terminalValLAD = Array(Float64, numResample)
+	# for m = 1:numResample
+	# 	terminalValLS[m] = very_simple_trading_sim(rBoot[:, m], rHatLS[:, m], tCost=tCost)[end]
+	# 	terminalValLAD[m] = very_simple_trading_sim(rBoot[:, m], rHatLAD[:, m], tCost=tCost)[end]
+	# end
+	# sort!(terminalValLS)
+	# sort!(terminalValLAD)
+	# iLower = Int(floor(trimSimTail * length(terminalValLS)))
+	# iUpper = length(terminalValLS) - iLower + 1
+	# terminalValLS = terminalValLS[iLower:iUpper]
+	# terminalValLAD = terminalValLAD[iLower:iUpper]
+	# println("Plotting terminal value kernel densities")
+	# tV = Vector{Float64}[terminalValLS, terminalValLAD]
+	# tVKDVec = KernelDensity.UnivariateKDE{FloatRange{Float64}}[ kde(tV[k]) for k = 1:2 ]
+	# tVLayerVec = Vector{Gadfly.Layer}[ layer(x=collect(tVKDVec[k].x), y=tVKDVec[k].density, Geom.line, adjust_default_theme_color(defaultThemeOverride, colourVec[k])) for k = 1:2 ]
+	# tVKernelPlot = plot(tVLayerVec..., Guide.xlabel("Terminal value"), Guide.ylabel("Density"), Guide.title("Density of terminal values from simple simulations"), Guide.manual_color_key(default_legend(["Least squares", "Least absolute deviations"])...), defaultThemeOverride)
+	# draw_local(tVKernelPlot, "Simulated_portfolio_terminal_values", dirPath=outputDir, fileType=:svg)
 	println("Routine complete")
-	#Perform simulations using the estimated models
-
-	error("Use naive trading sim code to write this bit quickly")
-
-
 end
 function simulate_signal_and_returns(v::Vector{Float64} ; rSquared::Float64=0.05, a::Float64=0.0)
 	!(0.0 < rSquared < 1.0) && error("Invalid rSquared")
@@ -296,8 +315,21 @@ function checkNLoptFlag(flag::Symbol)
 	flag == :FORCED_STOP && error("NLopt halted due to forced termination")
 	error("Unexpected flag from NLopt. Flag = " * string(flag))
 end
-
-
+#Function for performing a very simple trading simulation. Either hold cash, or trade an asset if forecast return > 0. tCost is in basis points
+function very_simple_trading_sim(r::Vector{Float64}, f::Vector{Float64} ; tCost::Float64=50.0)
+	length(f) != length(r) && error("Length mismatch")
+	N = length(f)
+	portValue = Array(Float64, N)
+	portValue[1] = 1000000.0
+	for n = 2:N
+		if f[n] > 0.0
+			portValue[n] = portValue[n-1] * (r[n] + 1) - (1/10000) * tCost * portValue[n-1] #notional transaction cost
+		else
+			portValue[n] = portValue[n-1]
+		end
+	end
+	return(portValue)
+end
 
 #-------------------------------------------
 #

@@ -250,17 +250,47 @@ Then Hogg's robust measure of tail fatness can be defined:
 \begin{equation}
 \k_{Hogg} = \frac{I(0.95, \infty) - I(-\infty, 0.05)}{I(0.5, \infty) - I(-\infty, 0.5)}
 \end{equation}
-In words, the numerator is the ``average'' value in the \emph{far right} of the distribution minus the ``average'' value in the \emph{}far left, while the denominator is the ``average'' value in the right minus the ``average value in the left. Roughly speaking, the numerator of this measure gets larger as the tails get fatter, while the denominator gets larger as variance increases, and so can be thought of as a scaling factor for controlling for changes in variance.
+In words, the numerator is the ``average'' value in the \emph{far right} of the distribution minus the ``average'' value in the \emph{far left}, while the denominator is the ``average'' value in the right minus the ``average'' value in the left. Roughly speaking, the numerator of this measure gets larger as the tails get fatter, while the denominator gets larger as variance increases, and so can be thought of as a scaling factor for controlling for changes in variance.
 
 It is interesting to compare the properties of the robust estimator of tail fatness with the standard sample kurtosis given a Student-t distribution with $2$ degrees of freedom DGP. Figure~\ref{XXXX} provides simulated average values for these two estimators for various sample sizes. As can be seen, the sample kurtosis diverges with the sample size (a common phenomenon when the population parameter is undefined). In contrast, the robust estimator of fat tails is stable with respect to the sample size, which is a much more desirable property in an estimator.
 
 
 
-\section{Tail Fatness of Financial Returns}\label{secFinReturnTailFatness}
+\section{Establishing Tail Fatness of Financial Returns}\label{secFinReturnTailFatness}
 
-In this section we examine the tail fatness of daily financial returns. Using daily\footnote{Close to close.} data from January 2005 to December 2015, I calculate Hogg's robust measure of tail fatness for several of the most popular stocks listed on the ASX.\footnote{AMP, ANZ, BHP, CBA, CCL, CWN, JBH, LLC, MQG, NAB, RIO, SUN, TLS, TOL, WBC, WES, WOW.} The estimates are depicted in Figure~\ref{XXXX}, along with two reference lines; one is the population value of Hogg's estimator for the Normal distribution, and the other is for the Student-t distribution with $2$ degrees of freedom.
+In this section we examine the tail fatness of daily financial returns. Using daily\footnote{Close to close.} data from January 2005 to December 2015, I calculate Hogg's robust measure of tail fatness for several of the most popular stocks listed on the ASX.\footnote{AMP, ANZ, BHP, CBA, CCL, CWN, JBH, LLC, MQG, NAB, RIO, SUN, TLS, TOL, WBC, WES, WOW.} The estimates are depicted in Figure~\ref{XXXX}, along with two reference lines; one is the population value of Hogg's estimator for the Normal distribution, and the other is for the Student-t distribution with $2$ degrees of freedom. As can be seen, according to Hogg's measure, all the stocks in the sample exhibit fat tails relative to the Normal distribution. This is typical of financial return data.
 
-As can be seen, according to Hogg's measure, all the stocks in the sample exhibit fat tails. 
+It is worth briefly diverging here into a quick discussion of how statisticians typically model fat tails in financial returns. One of the most popular approaches is to model returns as Normal, but with a conditional or stochastic volatility, i.e. $r_t | \s_t^2 \backsim \N(\m, \s_t^2)$. This framework will generate an unconditionally fat-tailed sequence. The intuition is fairly simple: a small number of returns generated when $\s_t^2$ is large will, on average, be much further into the tails of the unconditional distribution then when $\s_t^2$ is small. To see this in real world data, one needs to only to plot returns from 2006 to 2009, and note how the returns during the market crash of late 2008 and recovery of early 2009 dominate the sample.
+
+Assuming this modelling framework, it follows that the sequence $r_t / \s_t$ should have constant volatility, and thus not exhibit fat-tails relative to the Normal. Unfortunately, we cannot model $r_t / \s_t$ explicitly, since $\s_t$ is unobservable. However, we can substitute in an estimate for $\s_t$. Figure~\ref{XXXX} duplicates Figure~\ref{XXXX} except that now I have replaced daily returns as the input with daily returns standardised by a rolling window historical volatility estimate (with a window length of $100$). As can be seen, this technique is able to remove some, but not all, of the tail fatness in the return DGP. It is possible that there is a secondary source of tail-fatness in the DGP, but it is also possible that the remaining tail fatness is due to inaccuracies in our proxy for the true volatility process.
+
+
+
+\section{Robust Estimation of Financial Returns}\label{secFinReturnTailFatness}
+
+Having established the presence of fat tails in financial returns, it is of interest to establish whether practitioners should consider replacing standard statistical estimates with robust statistical estimates. Arguably the most famous estimate in statistics is the sample mean:
+\begin{equation}
+m_{normal} = \frac{1}{T} \sum_{t=1}^T r_t ,
+\end{equation}
+which is an estimate of the expected value of a distribution, which is equivalent to the centre of a symmetric distribution. A robust analogue to the sample mean is the trimmed mean. Let $r_{[1]}, ..., r_{[T]}$ denote the sorted version of the sequence $r_1, ..., r_T$ (these are sometimes called the \emph{order statistics}). Then for some trimming proportion $\a \in [0, 1]$, the trimmed mean is:
+\begin{equation}
+m_{robust} = \frac{1}{(1 - \a) T} \sum_{t=\frac{\a}{2} T}^{(1 - \frac{\a}{2}) T} r_{[t]} ,
+\end{equation}
+where for notational convenience I will assume $\a / 2$ is integer valued.
+
+In words, the trimmed mean symmetrically removes the largest and smallest $\a / 2$ fraction of observations from the dataset, and then computes a sample mean on the remaining data. Note that for $\a = 0$, the trimmed mean is equivalent to the sample mean, and for $\a = 1$, the trimmed mean is equivalent to the median.
+
+If the underlying DGP is symmetric, then the trimmed mean and sample mean are estimators for the same population statistic. However, if the DGP is fat-tailed, then the trimmed mean is more accurate (on average) than the sample mean as it disregards those observations in the tails of the DGP that add more noise than information. Given the importance of the expected value of financial returns, it is of interest to ask whether the trimmed mean is more accurate when used on financial data than the sample mean. Answering this question is complicated by the fact that the population mean is unobservable. Ideally, what is required is a DGP with roughly the same properties as the DGP for financial returns, but where the population mean is known. Fortunately, we can conjure up such a dataset using a block bootstrap procedure. Full details of the procedure are not provided here, but a classic paper on the subject is \can{Politis_Romano_(1994)}. Intuitively, we take a sequence of financial returns and centre them, so that their sample mean is $0$. We then treat this sequence of returns as if it is the entire population, and re-sample with replacement from it using a strategy that ensures any weak dependence structure in the data is preserved. By construction, the re-sampled sequences will have population mean of zero, although their sample means can (and will) differ from zero due to sampling with replacement.
+
+I re-sample $M$ sequences, each of length $T$, and the nature of the re-sampling scheme ensures that each sequence is independent from the other sequences. I then calculate both the sample mean and the trimmed mean on each sequence, and from the resulting $M$ estimates can construct a kernel density of the estimate. Under certain modelling assumptions, this density will converge on the true sampling distribution for the estimator as $T \ra \infty$. I performed this procedure on the sequence of NAB returns, and the sequence of CCL returns. I chose these two assets since in Figure~\ref{XXXX} they have the largest and smallest robust kurtosis (respectively).
+
+As can be seen in Figure~\ref{XXXX}, the trimmed mean significantly outperforms the sample mean for NAB data. Perhaps more surprisingly, the trimmed mean performance is reasonably good relative to the sample mean even for CCL data. This result is surprising, since CCL has relatively stable volatility over the sample period and so its tails are only mildly fat.
+
+Note that the sample period in question here is from 2005 to 2014. Of course, this period includes some major financial events, and correspondingly large shifts in volatility. If one chose a shorter horizon, say, $100$ days, perhaps the sample mean would have comparatively better performance, since it is feasible that volatility might be relatively stable over such a short horizon. To investigate this possibility, I isolated the $100$ sequential days in NAB returns that correspond to the largest value of the robust kurtosis, and compare it to the $100$ sequential days that correspond to the smallest robust kurtosis. I perform the same bootstrapping exercise on each of these datasets, and the results are in Figure~\ref{XXXX} and Figure~\ref{XXXX}. As expected, the trimmed mean massively outperforms over the interval with the fattest tails. Indeed, for this interval, the sampling distribution of the sample mean is trimodal! Surprisingly, the sample mean has only slightly better performance for the interval with the thinnest tails.
+
+Taken together, the above analysis suggests that a researcher should always at least consider a robust estimate when estimating the first moment of financial returns.
+
+ 
 
 
 
