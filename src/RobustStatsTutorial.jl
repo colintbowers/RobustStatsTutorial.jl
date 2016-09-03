@@ -189,7 +189,7 @@ end
 #-------------------------------------------
 # ROBUST PREDICTION OF FINANCIAL RETURNS
 #-------------------------------------------
-function return_prediction_financial_data( ; blockLength::Float64=4.0, numResample::Int=1000, varProxyMethod::Symbol=:historicvariance, numObs::Int=2000, rSquared::Float64=0.05, a::Float64=0.0, lag::Int=17, tCost::Float64=50.0, trimSimTail::Float64=0.05)
+function return_prediction_financial_data( ; blockLength::Float64=4.0, numResample::Int=1000, varProxyMethod::Symbol=:historicvariance, numObs::Int=2000, rSquared::Float64=0.05, a::Float64=0.0, lag::Int=17, tCost::Float64=0.0, trimSimTail::Float64=0.0, numAsset::Int=20, tradingSimRSquared::Float64=0.01, includeConstantInSim::Bool=true)
 	#Get variance proxy
 	println("Reading data")
 	if varProxyMethod == :realisedvariance
@@ -203,68 +203,155 @@ function return_prediction_financial_data( ; blockLength::Float64=4.0, numResamp
 	#Simuate returns, signal, error term, constant and coefficient
 	println("Simulating and bootstrapping")
 	(r, s, e, a, b) = simulate_signal_and_returns(v, rSquared=rSquared, a=a)
-	#Resample r, x, and e
-	inds = dbootstrapindex(length(r), blockLength, numResample=numResample)
-	rBoot = r[inds]
-	sBoot = s[inds]
-	eBoot = e[inds]
-	hoggVec = Float64[ hogg_robust_kurt(rBoot[:, m]) for m = 1:numResample ]
-	qProb = Float64[0.05, 0.25, 0.5, 0.75, 0.95]
-	hoggVecQ = quantile(hoggVec, qProb)
-	#Run regressions on the resampled data using multiple methods and get plot of estimated coefficients
-	println("Estimating coefficients on bootstrapped data")
-	coefLS = Array(Vector{Float64}, numResample)
-	coefLAD = Array(Vector{Float64}, numResample)
-	rSqLS = Array(Float64, numResample)
-	rSqLAD = Array(Float64, numResample)
-	rHatLS = Array(Float64, length(r), numResample) #We save bootstrapped return forecasts for simulations later
-	rHatLAD = Array(Float64, length(r), numResample)
-	for m = 1:numResample
-		y = rBoot[:, m]
-		x = [ones(Float64, length(y)) sBoot[:, m]]
-		coefLS[m] = x \ y
-		(coefLAD[m], _, _) = least_absolute_deviation(y, x)
-		rHatLS[:, m] = x * coefLS[m]
-		rHatLAD[:, m] = x * coefLAD[m]
-		eLS = y - rHatLS[:, m]
-		eLAD = y - rHatLAD[:, m]
-		tSS = sumabs2(y)
-		rSqLS[m] = 1 - sumabs2(eLS) / tSS
-		rSqLAD[m] = 1 - sumabs2(eLAD) / tSS
-	end
-	#Get kernel density plot of estimated coefficients (and include true value)
-	println("Building coefficient kernel densities")
-	aArr = Vector{Float64}[Float64[ coefLS[m][1] for m = 1:numResample ], Float64[ coefLAD[m][1] for m = 1:numResample ]]
-	bArr = Vector{Float64}[Float64[ coefLS[m][2] for m = 1:numResample ], Float64[ coefLAD[m][2] for m = 1:numResample ]]
-	aKDVec = KernelDensity.UnivariateKDE{FloatRange{Float64}}[ kde(aArr[k]) for k = 1:2 ]
-	bKDVec = KernelDensity.UnivariateKDE{FloatRange{Float64}}[ kde(bArr[k]) for k = 1:2 ]
-	aLayerVec = Vector{Gadfly.Layer}[ layer(x=collect(aKDVec[k].x), y=aKDVec[k].density, Geom.line, adjust_default_theme_color(defaultThemeOverride, colourVec[k])) for k = 1:2 ]
-	bLayerVec = Vector{Gadfly.Layer}[ layer(x=collect(bKDVec[k].x), y=bKDVec[k].density, Geom.line, adjust_default_theme_color(defaultThemeOverride, colourVec[k])) for k = 1:2 ]
-	aKernelPlot = plot(aLayerVec..., Guide.xlabel("Regression constant"), Guide.ylabel("Density"), Guide.title("Density of regression constant (true value = " * string(a) * ")"), Guide.manual_color_key(default_legend(["Least squares", "Least absolute deviations"])...), defaultThemeOverride)
-	bKernelPlot = plot(bLayerVec..., Guide.xlabel("Regression coefficient"), Guide.ylabel("Density"), Guide.title("Density of regression coefficient (true value = " * string(b) * ")"), Guide.manual_color_key(default_legend(["Least squares", "Least absolute deviations"])...), defaultThemeOverride)
-	println("Plotting coefficient kernel densities")
-	draw_local(aKernelPlot, "Regression_constant_density", dirPath=outputDir, fileType=:svg)
-	draw_local(bKernelPlot, "Regression_coefficient_density", dirPath=outputDir, fileType=:svg)
-	#Get kernel density plot of r-squares
-	println("Building rSquared kernel density")
-	rSqArr = Vector{Float64}[rSqLS, rSqLAD]
-	rSqKDVec = KernelDensity.UnivariateKDE{FloatRange{Float64}}[ kde(rSqArr[k]) for k = 1:2 ]
-	rSqLayerVec = Vector{Gadfly.Layer}[ layer(x=collect(rSqKDVec[k].x), y=rSqKDVec[k].density, Geom.line, adjust_default_theme_color(defaultThemeOverride, colourVec[k])) for k = 1:2 ]
-	rSqKernelPlot = plot(rSqLayerVec..., Guide.xlabel("R-squared"), Guide.ylabel("Density"), Guide.title("Density of regression R-squared (true value = " * string(rSquared) * ")"), Guide.manual_color_key(default_legend(["Least squares", "Least absolute deviations"])...), defaultThemeOverride)
-	println("Plotting rSquared kernel density")
-	draw_local(rSqKernelPlot, "Regression_rSquared_density", dirPath=outputDir, fileType=:svg)
-	println("Hogg robust estimator quantiles (" * string(qProb) * ") = " * string(hoggVecQ))
-	#Perform simulations using the estimated models and plot density of terminal values
-	# println("Performing simple trading simulations")
-	# terminalValLS = Array(Float64, numResample)
-	# terminalValLAD = Array(Float64, numResample)
+	# #Resample r, x, and e
+	# inds = dbootstrapindex(length(r), blockLength, numResample=numResample)
+	# rBoot = r[inds]
+	# sBoot = s[inds]
+	# eBoot = e[inds]
+	# hoggVec = Float64[ hogg_robust_kurt(rBoot[:, m]) for m = 1:numResample ]
+	# qProb = Float64[0.05, 0.25, 0.5, 0.75, 0.95]
+	# hoggVecQ = quantile(hoggVec, qProb)
+	# #Run regressions on the resampled data using multiple methods and get plot of estimated coefficients
+	# println("Estimating coefficients on bootstrapped data")
+	# coefLS = Array(Vector{Float64}, numResample)
+	# coefLAD = Array(Vector{Float64}, numResample)
+	# rSqLS = Array(Float64, numResample)
+	# rSqLAD = Array(Float64, numResample)
+	# rHatLS = Array(Float64, length(r), numResample)
+	# rHatLAD = Array(Float64, length(r), numResample)
 	# for m = 1:numResample
-	# 	terminalValLS[m] = very_simple_trading_sim(rBoot[:, m], rHatLS[:, m], tCost=tCost)[end]
-	# 	terminalValLAD[m] = very_simple_trading_sim(rBoot[:, m], rHatLAD[:, m], tCost=tCost)[end]
+	# 	y = rBoot[:, m]
+	# 	x = [ones(Float64, length(y)) sBoot[:, m]]
+	# 	coefLS[m] = x \ y
+	# 	(coefLAD[m], _, _) = least_absolute_deviation(y, x)
+	# 	rHatLS[:, m] = x * coefLS[m]
+	# 	rHatLAD[:, m] = x * coefLAD[m]
+	# 	eLS = y - rHatLS[:, m]
+	# 	eLAD = y - rHatLAD[:, m]
+	# 	tSS = sumabs2(y)
+	# 	rSqLS[m] = 1 - sumabs2(eLS) / tSS
+	# 	rSqLAD[m] = 1 - sumabs2(eLAD) / tSS
 	# end
+	# #Get kernel density plot of estimated coefficients (and include true value)
+	# println("Building coefficient kernel densities")
+	# aArr = Vector{Float64}[Float64[ coefLS[m][1] for m = 1:numResample ], Float64[ coefLAD[m][1] for m = 1:numResample ]]
+	# bArr = Vector{Float64}[Float64[ coefLS[m][2] for m = 1:numResample ], Float64[ coefLAD[m][2] for m = 1:numResample ]]
+	# aKDVec = KernelDensity.UnivariateKDE{FloatRange{Float64}}[ kde(aArr[k]) for k = 1:2 ]
+	# bKDVec = KernelDensity.UnivariateKDE{FloatRange{Float64}}[ kde(bArr[k]) for k = 1:2 ]
+	# aLayerVec = Vector{Gadfly.Layer}[ layer(x=collect(aKDVec[k].x), y=aKDVec[k].density, Geom.line, adjust_default_theme_color(defaultThemeOverride, colourVec[k])) for k = 1:2 ]
+	# bLayerVec = Vector{Gadfly.Layer}[ layer(x=collect(bKDVec[k].x), y=bKDVec[k].density, Geom.line, adjust_default_theme_color(defaultThemeOverride, colourVec[k])) for k = 1:2 ]
+	# aKernelPlot = plot(aLayerVec..., Guide.xlabel("Regression constant"), Guide.ylabel("Density"), Guide.title("Density of regression constant (true value = " * string(a) * ")"), Guide.manual_color_key(default_legend(["Least squares", "Least absolute deviations"])...), defaultThemeOverride)
+	# bKernelPlot = plot(bLayerVec..., Guide.xlabel("Regression coefficient"), Guide.ylabel("Density"), Guide.title("Density of regression coefficient (true value = " * string(b) * ")"), Guide.manual_color_key(default_legend(["Least squares", "Least absolute deviations"])...), defaultThemeOverride)
+	# println("Plotting coefficient kernel densities")
+	# draw_local(aKernelPlot, "Regression_constant_density", dirPath=outputDir, fileType=:svg)
+	# draw_local(bKernelPlot, "Regression_coefficient_density", dirPath=outputDir, fileType=:svg)
+	# #Get kernel density plot of r-squares
+	# println("Building rSquared kernel density")
+	# rSqArr = Vector{Float64}[rSqLS, rSqLAD]
+	# rSqKDVec = KernelDensity.UnivariateKDE{FloatRange{Float64}}[ kde(rSqArr[k]) for k = 1:2 ]
+	# rSqLayerVec = Vector{Gadfly.Layer}[ layer(x=collect(rSqKDVec[k].x), y=rSqKDVec[k].density, Geom.line, adjust_default_theme_color(defaultThemeOverride, colourVec[k])) for k = 1:2 ]
+	# rSqKernelPlot = plot(rSqLayerVec..., Guide.xlabel("R-squared"), Guide.ylabel("Density"), Guide.title("Density of regression R-squared (true value = " * string(rSquared) * ")"), Guide.manual_color_key(default_legend(["Least squares", "Least absolute deviations"])...), defaultThemeOverride)
+	# println("Plotting rSquared kernel density")
+	# draw_local(rSqKernelPlot, "Regression_rSquared_density", dirPath=outputDir, fileType=:svg)
+	# println("Hogg robust estimator quantiles (" * string(qProb) * ") = " * string(hoggVecQ))
+	#Perform simulations using the estimated models and plot density of terminal values
+	println("Performing simple trading simulations")
+	terminalValLS = Array(Float64, numResample)
+	terminalValLAD = Array(Float64, numResample)
+	avgAbsErrorLS = Array(Float64, numResample)
+	avgAbsErrorLAD = Array(Float64, numResample)
+	propCorSignPredictionLS = Array(Float64, numResample)
+	propCorSignPredictionLAD = Array(Float64, numResample)
+	coefMatLS = Array(Float64, numResample, numAsset)
+	constantMatLS = Array(Float64, numResample, numAsset)
+	coefMatLAD = Array(Float64, numResample, numAsset)
+	constantMatLAD = Array(Float64, numResample, numAsset)
+	bMat = Array(Float64, numResample, numAsset)
+	rHatCorrLS = Array(Float64, numResample, numAsset)
+	rHatCorrLAD = Array(Float64, numResample, numAsset)
+	sCorr = Array(Float64, numResample, numAsset)
+	for m = 1:numResample
+		rMat = Array(Float64, length(r), numAsset)
+		sMat = Array(Float64, length(r), numAsset)
+		eMat = Array(Float64, length(r), numAsset)
+		aVec = Array(Float64, numAsset)
+		bVec = Array(Float64, numAsset)
+		for j = 1:numAsset
+			(rMat[:, j], sMat[:, j], eMat[:, j], aVec[j], bVec[j]) = simulate_signal_and_returns(v, rSquared=tradingSimRSquared, a=0.0)
+		end
+		bMat[m, :] = deepcopy(bVec)
+		coefLSVec = Array(Vector{Float64}, numAsset)
+		coefLADVec = Array(Vector{Float64}, numAsset)
+		rHatLSMat = Array(Float64, length(r), numAsset)
+		rHatLADMat = Array(Float64, length(r), numAsset)
+		for j = 1:numAsset
+			y = rMat[:, j]
+			includeConstantInSim ? (x = [ones(Float64, length(y)) sMat[:, j]]) : (x = sMat[:, j]'')
+
+			coefLSVec[j] = x \ y
+			#coefLSVec[j] = inv(x' * x) * x' * y
+
+			(coefLADVec[j], _, _) = least_absolute_deviation(y, x)
+			any(isnan(coefLADVec[j])) && (coefLADVec[j] = coefLSVec[j])
+			# println("-------")
+			# println(coefLSVec[j])
+			# println(coefLADVec[j])
+
+			rHatLSMat[:, j] = x * coefLSVec[j]
+			rHatLADMat[:, j] = x * coefLADVec[j]
+			includeConstantInSim ? (constantMatLS[m, j] = coefLSVec[j][1]) : (coefMatLS[m, j] = NaN)
+			includeConstantInSim ? (coefMatLS[m, j] = coefLSVec[j][2]) : (coefMatLS[m, j] = coefLSVec[j][1])
+			includeConstantInSim ? (constantMatLAD[m, j] = coefLADVec[j][1]) : (coefMatLAD[m, j] = NaN)
+			includeConstantInSim ? (coefMatLAD[m, j] = coefLADVec[j][2]) : (coefMatLAD[m, j] = coefLADVec[j][1])
+
+			rHatCorrLS[m, j] = cor(rMat[:, j], coefLSVec[j][1] * sMat[:, j])
+			rHatCorrLAD[m, j] = cor(rMat[:, j], coefLADVec[j][1] * sMat[:, j])
+			sCorr[m, j] = cor(rMat[:, j], sMat[:, j])
+
+			# rHatCorrLS[m, j] = cor(rMat[:, j], rHatLSMat[:, j])
+			# rHatCorrLAD[m, j] = cor(rMat[:, j], rHatLADMat[:, j])
+			# sCorr[m, j] = cor(rMat[:, j], sMat[:, j])
+
+			# rHatCorrLS[m, j] = cor(y, rHatLSMat[:, j])
+			# rHatCorrLAD[m, j] = cor(y, rHatLADMat[:, j])
+			# sCorr[m, j] = cor(y, vec(x))
+
+
+		end
+		avgAbsErrorLS[m] = mean(abs(rHatLSMat - rMat))
+		avgAbsErrorLAD[m] = mean(abs(rHatLADMat - rMat))
+		propCorSignPredictionLS[m] = mean((rHatLSMat .> 0.0) .* (rMat .> 0.0))
+		propCorSignPredictionLAD[m] = mean((rHatLADMat .> 0.0) .* (rMat .> 0.0))
+		terminalValLS[m] = very_simple_trading_sim(rMat, rHatLSMat)[end]
+		terminalValLAD[m] = very_simple_trading_sim(rMat, rHatLADMat)[end]
+	end
+	println("Proportion of samples when LAD has smaller absolute forecast error = " * string(sum(avgAbsErrorLAD .< avgAbsErrorLS) / numResample))
+	println("Proportion of correct sign predictions (LS) = " * string(mean(propCorSignPredictionLS)))
+	println("Proportion of correct sign predictions (LAD) = " * string(mean(propCorSignPredictionLAD)))
+	println("Mean terminal value (LS) = " * string(mean(terminalValLS)))
+	println("Mean terminal value (LAD) = " * string(mean(terminalValLAD)))
+	println("Median terminal value (LS) = " * string(median(terminalValLS)))
+	println("Median terminal value (LAD) = " * string(median(terminalValLAD)))
+	println("Average correlation between signal and r = " * string(mean(sCorr, 1)))
+	println("Average correlation between rHatLS and r = " * string(mean(rHatCorrLS, 1)))
+	println("Average correlation between rHatLAD and r = " * string(mean(rHatCorrLAD, 1)))
+
+	println("Average correlation (all assets) between signal and r = " * string(mean(sCorr)))
+	println("Average correlation (all assets) between rHatLS and r = " * string(mean(rHatCorrLS)))
+	println("Average correlation (all assets) between rHatLAD and r = " * string(mean(rHatCorrLAD)))
+
+
+	writecsv("/home/colin/Temp/corMatLS.csv", rHatCorrLS)
+	writecsv("/home/colin/Temp/corMatLAD.csv", rHatCorrLAD)
+	writecsv("/home/colin/Temp/corSig.csv", sCorr)
+
+	# writecsv("/home/colin/Temp/coefMatLS.csv", coefMatLS)
+	# writecsv("/home/colin/Temp/coefMatLAD.csv", coefMatLAD)
+	# writecsv("/home/colin/Temp/coefMatTrue.csv", bMat)
 	# sort!(terminalValLS)
 	# sort!(terminalValLAD)
 	# iLower = Int(floor(trimSimTail * length(terminalValLS)))
+	# iLower == 0 && (iLower = 1)
 	# iUpper = length(terminalValLS) - iLower + 1
 	# terminalValLS = terminalValLS[iLower:iUpper]
 	# terminalValLAD = terminalValLAD[iLower:iUpper]
@@ -330,7 +417,23 @@ function very_simple_trading_sim(r::Vector{Float64}, f::Vector{Float64} ; tCost:
 	end
 	return(portValue)
 end
-
+function very_simple_trading_sim(r::Matrix{Float64}, f::Matrix{Float64})
+	size(r) != size(f) && error("Size mismatch")
+	portValue = Array(Float64, size(f, 1))
+	portValue[1] = 1000000.0
+	for n = 2:size(r, 1)
+		inds = (vec(f[n, :]) .> 0.0)
+		if !any(inds)
+			portValue[n] = portValue[n-1]
+		else
+			portValue[n] = port_value_update(portValue[n-1], vec(r[n, :])[inds])
+		end
+	end
+	return(portValue)
+end
+port_value_update(p::Float64, r::Float64) = p * (r + 1)
+port_value_update(p::Vector{Float64}, r::Vector{Float64}) = (length(p) == length(r)) ? sum(Float64[ port_value_update(p[j], r[j]) for j = 1:length(p) ]) : error("Length mismatch")
+port_value_update(p::Float64, r::Vector{Float64}) = port_value_update((p/length(r))*ones(Float64, length(r)), r)
 #-------------------------------------------
 #
 #-------------------------------------------
