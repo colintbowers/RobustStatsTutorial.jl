@@ -1,0 +1,46 @@
+This is BibTeX, Version 0.99d (TeX Live 2015/Debian)
+Capacity: max_strings=35307, hash_size=35307, hash_prime=30011
+The top-level auxiliary file: Bowers_(2016)_Robust_Stats_Tutorial_PAPER.aux
+The style file: myagsm.bst
+Database file #1: /home/colin/Dropbox/Articles_Academic/BiBTeX/BiBTeX_Article_List.bib
+You've used 2 entries,
+            2909 wiz_defined-function locations,
+            653 strings with 5193 characters,
+and the built_in function-call counts, 5756 in all, are:
+= -- 899
+> -- 71
+< -- 0
++ -- 402
+- -- 21
+* -- 480
+:= -- 1201
+add.period$ -- 2
+call.type$ -- 2
+change.case$ -- 28
+chr.to.int$ -- 2
+cite$ -- 2
+duplicate$ -- 32
+empty$ -- 81
+format.name$ -- 29
+if$ -- 1028
+int.to.chr$ -- 5
+int.to.str$ -- 0
+missing$ -- 2
+newline$ -- 9
+num.names$ -- 20
+pop$ -- 6
+preamble$ -- 1
+purify$ -- 30
+quote$ -- 0
+skip$ -- 27
+stack$ -- 0
+substring$ -- 1264
+swap$ -- 6
+text.length$ -- 28
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 8
+warning$ -- 0
+while$ -- 44
+width$ -- 0
+write$ -- 26

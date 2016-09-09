@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink"
+     xmlns:gadfly="http://www.gadflyjl.org/ns"
+     version="1.2"
+     width="400mm" height="200mm" viewBox="0 0 400 200"
+     stroke="none"
+     fill="#000000"
+     stroke-width="0.3"
+     font-size="3.88"
+>
+<g class="plotroot xscalable yscalable" id="img-b12c8ae8-1">
+  <g font-size="6" font-family="'PT Sans','Helvetica Neue','Helvetica',sans-serif" fill="#564A55" stroke="#000000" stroke-opacity="0.000" id="img-b12c8ae8-2">
+    <text x="190.84" y="186.42" text-anchor="middle" dy="0.6em">Number of observations</text>
+  </g>
+  <g class="guide xlabels" font-size="4.94" font-family="'PT Sans Caption','Helvetica Neue','Helvetica',sans-serif" fill="#6C606B" id="img-b12c8ae8-3">
+    <text x="27.37" y="177.74" text-anchor="middle" dy="0.6em">0</text>
+    <text x="190.84" y="177.74" text-anchor="middle" dy="0.6em">500</text>
+    <text x="354.31" y="177.74" text-anchor="middle" dy="0.6em">1000</text>
+  </g>
+  <g class="guide colorkey" id="img-b12c8ae8-4">
+    <g fill="#4C404B" font-size="4.94" font-family="'PT Sans','Helvetica Neue','Helvetica',sans-serif" id="img-b12c8ae8-5">
+      <text x="361.11" y="90.87" dy="0.35em">Sample kurtosis</text>
+      <text x="361.11" y="96.47" dy="0.35em">Robust measure</text>
+    </g>
+    <g stroke="#000000" stroke-opacity="0.000" id="img-b12c8ae8-6">
+      <rect x="357.31" y="89.47" width="2.8" height="2.8" fill="#0000FF"/>
+      <rect x="357.31" y="95.07" width="2.8" height="2.8" fill="#008000"/>
+    </g>
+    <g fill="#362A35" font-size="6" font-family="'PT Sans','Helvetica Neue','Helvetica',sans-serif" stroke="#000000" stroke-opacity="0.000" id="img-b12c8ae8-7">
+      <text x="357.31" y="86.06">Legend:</text>
+    </g>
+  </g>
+<g clip-path="url(#img-b12c8ae8-8)">
+  <g id="img-b12c8ae8-9">
+    <g pointer-events="visible" opacity="1" fill="#000000" fill-opacity="0.000" stroke="#000000" stroke-opacity="0.000" class="guide background" id="img-b12c8ae8-10">
+      <rect x="25.37" y="5" width="330.94" height="171.74"/>
+    </g>
+    <g class="guide ygridlines xfixed" stroke-dasharray="0.5,0.5" stroke-width="0.2" stroke="#D0D0E0" id="img-b12c8ae8-11">
+      <path fill="none" d="M25.37,174.74 L 356.31 174.74"/>
+      <path fill="none" d="M25.37,118.83 L 356.31 118.83"/>
+      <path fill="none" d="M25.37,62.91 L 356.31 62.91"/>
+      <path fill="none" d="M25.37,7 L 356.31 7"/>
+    </g>
+    <g class="guide xgridlines yfixed" stroke-dasharray="0.5,0.5" stroke-width="0.2" stroke="#D0D0E0" id="img-b12c8ae8-12">
+      <path fill="none" d="M27.37,5 L 27.37 176.74"/>
+      <path fill="none" d="M190.84,5 L 190.84 176.74"/>
+      <path fill="none" d="M354.31,5 L 354.31 176.74"/>
+    </g>
+    <g class="plotpanel" id="img-b12c8ae8-13">
+      <g stroke-width="0.3" fill="#000000" fill-opacity="0.000" class="geometry" stroke-dasharray="none" stroke="#008000" id="img-b12c8ae8-14">
+        <path fill="none" d="M43.71,170.51 L 60.06 170.07 76.41 170.26 92.76 169.97 109.1 170.05 125.45 170 141.8 170.03 158.14 169.97 174.49 170.04 190.84 169.94 207.19 169.96 223.53 169.96 239.88 169.97 256.23 169.91 272.57 169.92 288.92 169.9 305.27 169.94 321.62 169.92 337.96 169.95 354.31 169.94"/>
+      </g>
+      <g stroke-width="0.3" fill="#000000" fill-opacity="0.000" class="geometry" stroke-dasharray="none" stroke="#0000FF" id="img-b12c8ae8-15">
+        <path fill="none" d="M43.71,164.01 L 60.06 156.52 76.41 147.94 92.76 138.18 109.1 126.17 125.45 124.82 141.8 110.45 158.14 107.28 174.49 113.27 190.84 96.95 207.19 102.3 223.53 91.63 239.88 78.39 256.23 75.81 272.57 47.95 288.92 70.3 305.27 48.9 321.62 40.06 337.96 33.9 354.31 36.94"/>
+      </g>
+    </g>
+  </g>
+</g>
+  <g class="guide ylabels" font-size="4.94" font-family="'PT Sans Caption','Helvetica Neue','Helvetica',sans-serif" fill="#6C606B" id="img-b12c8ae8-16">
+    <text x="24.37" y="174.74" text-anchor="end" dy="0.35em">0</text>
+    <text x="24.37" y="118.83" text-anchor="end" dy="0.35em">50</text>
+    <text x="24.37" y="62.91" text-anchor="end" dy="0.35em">100</text>
+    <text x="24.37" y="7" text-anchor="end" dy="0.35em">150</text>
+  </g>
+  <g font-size="6" font-family="'PT Sans','Helvetica Neue','Helvetica',sans-serif" fill="#564A55" stroke="#000000" stroke-opacity="0.000" id="img-b12c8ae8-17">
+    <text x="9.79" y="88.87" text-anchor="middle" dy="0.35em" transform="rotate(-90, 9.79, 90.87)">Simulated average estimator value</text>
+  </g>
+</g>
+<defs>
+  <clipPath id="img-b12c8ae8-8">
+  <path d="M25.37,5 L 356.31 5 356.31 176.74 25.37 176.74" />
+</clipPath>
+</defs>
+</svg>
