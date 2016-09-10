@@ -165,8 +165,8 @@ function tail_fatness_financial_data( ; scaleMethod::Symbol=:historicvariance, b
 	rNABSml = rNAB[iSmlHogg:iSmlHogg+99]
 	rNABLrg = rNAB[iLrgHogg:iLrgHogg+99]
 	println("Drawing mean comparison plots (short horizon)")
-	pNABSml = kernel_plot_robust_mean_versus_trimmed_mean(rNABSml, secStr="NAB Short Horizon (Robust kurt = " * string(rollingHoggNAB[iSmlHogg]) * ")", blockLength=blockLength)
-	pNABLrg = kernel_plot_robust_mean_versus_trimmed_mean(rNABLrg, secStr="NAB Short Horizon (Robust kurt = " * string(rollingHoggNAB[iSmlHogg]) * ")", blockLength=blockLength)
+	pNABSml = kernel_plot_robust_mean_versus_trimmed_mean(rNABSml, secStr="NAB Short Horizon (Robust kurt = " * string(rollingHoggNAB[iSmlHogg])[1:3] * ")", blockLength=blockLength)
+	pNABLrg = kernel_plot_robust_mean_versus_trimmed_mean(rNABLrg, secStr="NAB Short Horizon (Robust kurt = " * string(rollingHoggNAB[iLrgHogg])[1:3] * ")", blockLength=blockLength)
 	draw_local(pNABSml, "NAB_Bootstrapped_Location_Estimator_Density_(short_horizon_thin_tail)", dirPath=outputDir, fileType=:svg)
 	draw_local(pNABLrg, "NAB_Bootstrapped_Location_Estimator_Density_(short_horizon_fat_tail)", dirPath=outputDir, fileType=:svg)
 	println("Routine complete")
