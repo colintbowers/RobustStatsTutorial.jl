@@ -125,9 +125,9 @@
 
 
 \def\newblock{\hskip .11em plus .33em minus .07em}
-\title[{\makebox[.45\paperwidth]{\hfill \insertframenumber/\inserttotalframenumber}}]{Robust Stats and Financial Data}  
+\title[{\makebox[.45\paperwidth]{\hfill \insertframenumber/\inserttotalframenumber}}]{Robust Statistics and Financial Data}  
 \author{Colin T. Bowers}
-\institute{Macquarie University, colintbowers@gmail.com}
+\institute{Macquarie University, \newline colintbowers@gmail.com, \newline https://github.com/colintbowers/RobustStatsTutorial.jl}
 \date{2016-09-14}
 \begin{document}		
 
@@ -167,6 +167,7 @@
 \item Fat tails in financial returns
 \item The trimmed mean and financial returns
 \item Robust estimation of a linear model for financial returns
+\item Traps and pitfalls when using robust statistics
 \end{enumerate}
 \end{frame}
 
@@ -177,9 +178,10 @@
 \begin{frame}
 \frametitle{Fat-tailed data}
 \begin{center}
-\begin{picture}(200,100) \put(-60,-30){\includegraphics[height=5.0cm]{tDistDataCutoff}} \end{picture}
+\begin{picture}(200,100) \put(-60,-20){\includegraphics[height=4.5cm]{tDistDataCutoff}} \end{picture}
 \end{center}
-\vspace{0.5cm}
+\vspace{0.3cm}
+
 20 observations from the Student-t (2 DoF*) Distribution
 \begin{itemize}
 \item True mean  = 0
@@ -284,22 +286,20 @@ r_t \backsim \N(\m, \s_t^2) ,
 where $\s_t$ is typically stochastic, sometimes by conditioning on time $t-1$ (e.g. GARCH). 
 
 \vspace{0.5cm}
-
-This suggests the random variable $r_t / \s_t$ should be Normal...
-
+The volatility clustering effect of GARCH results in short periods where, \emph{unconditionally}, we get many observations from the tails, e.g. late 2008 to early 2009.
 \end{frame}
 
-
-\begin{frame}
-\frametitle{Tail Fatness in Daily Financial Returns}
-\begin{center}
-\begin{picture}(200,100) \put(-60,-30){\includegraphics[height=5.0cm]{RobustKurtStocksStd}} \end{picture}
-\end{center}
-\vspace{0.75cm}
-Robust kurtosis of daily financial returns standardised by moving window* historical variance
-
-\scriptsize{*window length = 100}
-\end{frame}
+%
+%\begin{frame}
+%\frametitle{Tail Fatness in Daily Financial Returns}
+%\begin{center}
+%\begin{picture}(200,100) \put(-60,-30){\includegraphics[height=5.0cm]{RobustKurtStocksStd}} \end{picture}
+%\end{center}
+%\vspace{0.75cm}
+%Robust kurtosis of daily financial returns standardised by moving window* historical variance
+%
+%\scriptsize{*window length = 100}
+%\end{frame}
 
 
 
@@ -307,21 +307,21 @@ Robust kurtosis of daily financial returns standardised by moving window* histor
 
 \section{The Trimmed Mean for Daily Financial Returns}
 
-\begin{frame}
-\frametitle{The trimmed mean}
-Let $r_{[t]}, t = 1, ..., T$ denote the sorted version of $r_t, t = 1, ..., T$, (i.e. the \emph{order statistics}). Then the trimmed mean is defined:
-\begin{equation}
-m_\a = \frac{1}{(1 - \a)T} \sum_{t=\frac{a}{2}T}^{(1 - \frac{\a}{2})T} r_{[t]}
-\end{equation}
-for some $\a \in [0, 1]$.
-\vspace{0.5cm}
-
-Note:
-\begin{itemize}
-\item $\a = 0 \ra$ sample mean 
-\item $\a = 1 \ra$ sample median 
-\end{itemize}
-\end{frame}
+%\begin{frame}
+%\frametitle{The trimmed mean}
+%Let $r_{[t]}, t = 1, ..., T$ denote the sorted version of $r_t, t = 1, ..., T$, (i.e. the \emph{order statistics}). Then the trimmed mean is defined:
+%\begin{equation}
+%m_\a = \frac{1}{(1 - \a)T} \sum_{t=\frac{a}{2}T}^{(1 - \frac{\a}{2})T} r_{[t]}
+%\end{equation}
+%for some $\a \in [0, 1]$.
+%\vspace{0.5cm}
+%
+%Note:
+%\begin{itemize}
+%\item $\a = 0 \ra$ sample mean 
+%\item $\a = 1 \ra$ sample median 
+%\end{itemize}
+%\end{frame}
 
 
 
@@ -392,7 +392,7 @@ r_t = \a + \b s_t + e_t ,
 where $s_t$ is a predictive signal.
 
 \vspace{0.5cm}
-\red{Note:} If the $R^2$ of this model is small, then $r_t$ and $e_t$ are likely to have similar statistical properties.
+\red{Note:} If the $R^2$ of this model is small, then $r_t$ and $e_t$ are likely to have similar statistical properties, such as heteroskedasticity.
 \end{frame}
 
 
@@ -411,7 +411,7 @@ for some loss function $L$.
 \item $L(\bm{e}) = \norm{\bm{e}}_2 \ra$ Least Squares (LS)
 \item $L(\bm{e}) = \norm{\bm{e}}_1 \ra$ Least Absolute Deviations (LAD)
 \end{itemize}
-\blue{Question:} Given daily financial return data, should we prefer LS or LAD?
+\blue{Question:} It is well know that LS loses its desirable properties in the presence of heteroskedasticity. So, given daily financial return data, should we prefer LS or LAD?
 \end{frame}
 
 
@@ -481,9 +481,90 @@ Portfolio terminal value for LS versus LAD estimation. Portfolio start value = 1
 
 
 
+
+\section{What Can Go Wrong?}
+
+\begin{frame}
+\frametitle{Robust skew}
+Let $Q_p$ denote the quantile corresponding to probability $p$. Then a robust measure of skewness is:
+\begin{equation}
+RobustSkewness = \frac{Q_{0.75} - Q_{0.5}}{Q_{0.75} - Q_{0.25}} - \frac{Q_{0.5} - Q_{0.25}}{Q_{0.75} - Q_{0.25}}
+\end{equation}
+\end{frame}
+
+
+
+\begin{frame}
+\frametitle{Robust skew}
+\begin{center}
+\begin{picture}(200,100) \put(-30,-30){\includegraphics[height=5.0cm]{LognormalRobustSkewShaded}} \end{picture}
+\end{center}
+\vspace{0.5cm}
+
+Kernel density of the Lognormal(0, 1) distribution with $0.25$, $0.5$, and $0.75$ quantiles marked
+\end{frame}
+
+
+
+\begin{frame}
+\frametitle{Trim mean for Lognormal distribution}
+\begin{center}
+\begin{picture}(200,100) \put(-30,-30){\includegraphics[height=5.0cm]{LognormalTrimMean}} \end{picture}
+\end{center}
+\begin{center}
+\vspace{1.0cm}
+True mean = 0
+\end{center}
+\end{frame}
+
+
+
+\begin{frame}
+\frametitle{Tail Fatness in Daily Financial Returns}
+\begin{center}
+\begin{picture}(200,100) \put(-60,-30){\includegraphics[height=5.0cm]{RobustSkewStocks}} \end{picture}
+\end{center}
+\vspace{0.75cm}
+Robust skewness of daily financial returns for some popular stocks. Note, Symmetric and Lognormal(0, 1) lines included for reference. 
+\end{frame}
+
+
+
+\begin{frame}
+\frametitle{Kernel density estimates for trimmed and sample mean}
+\begin{center}
+\begin{picture}(200,100) \put(-60,-30){\includegraphics[height=5.0cm]{WOWTrimMeanFullPeriod}} \end{picture}
+\end{center}
+\vspace{1cm}
+Resampled WOW daily return data (2005 to 2015).
+\end{frame}
+
+
+
+\begin{frame}
+\frametitle{Kernel density estimates for trimmed and sample mean}
+\begin{center}
+\begin{picture}(200,100) \put(-60,-30){\includegraphics[height=5.0cm]{ANZTrimMeanFullPeriod}} \end{picture}
+\end{center}
+\vspace{1cm}
+Resampled ANZ daily return data (2005 to 2015).
+\end{frame}
+
+
+
+
+
 \begin{frame}
 \frametitle{TL;DR}
-TL;DR: Any empiricist working with financial return data should at least consider robust statistics.
+TL;DR: Any empiricist working with financial data subject to typical heteroskedasticity patterns should at least consider robust statistics.
+
+\vspace{1cm}
+All presentation materials and source code publicly available at:
+
+\vspace{0.5cm}
+\begin{center}
+https://github.com/colintbowers/RobustStatsTutorial.jl
+\end{center}
 \end{frame}
 
 

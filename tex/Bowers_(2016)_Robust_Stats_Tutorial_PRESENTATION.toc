@@ -2,5 +2,6 @@
 \beamer@sectionintoc {1}{Basic Intuition}{2}{0}{1}
 \beamer@sectionintoc {2}{Tail Fatness}{5}{0}{2}
 \beamer@sectionintoc {3}{Tail Fatness in Daily Financial Returns}{9}{0}{3}
-\beamer@sectionintoc {4}{The Trimmed Mean for Daily Financial Returns}{12}{0}{4}
-\beamer@sectionintoc {5}{Robust Estimation of a Linear Model for Financial Returns}{18}{0}{5}
+\beamer@sectionintoc {4}{The Trimmed Mean for Daily Financial Returns}{11}{0}{4}
+\beamer@sectionintoc {5}{Robust Estimation of a Linear Model for Financial Returns}{16}{0}{5}
+\beamer@sectionintoc {6}{What Can Go Wrong?}{23}{0}{6}

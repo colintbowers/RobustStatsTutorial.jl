@@ -39,8 +39,6 @@ const secList = ["AMP", "ANZ", "BHP", "CBA", "CCL", "JBH", "LLC", "NAB", "RIO", 
 #Create output directory
 !isdir(outputDir) && mkdir(outputDir)
 
-#Include other module files
-include("common.jl")
 
 #--------------------------------------------
 # SIMPLE EXAMPLE WITH t-DISTRIBUTION
@@ -177,13 +175,13 @@ function kernel_plot_robust_mean_versus_trimmed_mean(secRet::Vector{Vector{Float
 	r = secRet[iSec[1]]
 	return(kernel_plot_robust_mean_versus_trimmed_mean(r, secStr=secStr, numResample=numResample, blockLength=blockLength))
 end
-function kernel_plot_robust_mean_versus_trimmed_mean(r::Vector{Float64} ; numResample::Int=1000, blockLength::Float64=4.0, secStr::String="")
+function kernel_plot_robust_mean_versus_trimmed_mean(r::Vector{Float64} ; numResample::Int=1000, blockLength::Float64=4.0, secStr::String="", bpMult::Int=10000)
 	rCent = r - mean(r) #Centred so re-sampled data has true mean of zero
 	rBoot = dbootstrapdata(rCent, blockLength=blockLength, numResample=numResample)
-	bootEst = Vector{Float64}[Float64[ 10000*mean(rBoot[:, m]) for m = 1:numResample ], Float64[ 10000*tmean(rBoot[:, m], 0.4) for m = 1:numResample ]]
+	bootEst = Vector{Float64}[Float64[ bpMult*mean(rBoot[:, m]) for m = 1:numResample ], Float64[ bpMult*tmean(rBoot[:, m], 0.4) for m = 1:numResample ]]
 	kDVec = KernelDensity.UnivariateKDE{FloatRange{Float64}}[ kde(bootEst[k]) for k = 1:2 ]
 	layerVec = Vector{Gadfly.Layer}[ layer(x=collect(kDVec[k].x), y=kDVec[k].density, Geom.line, adjust_default_theme_color(defaultThemeOverride, colourVec[k])) for k = 1:2 ]
-	secStr == "" ? (localTitle = "Location estimator densities for return data") : (localTitle = "Location estimator densities for " * secStr * " return data")
+	secStr == "" ? (localTitle = "Location estimator densities") : (localTitle = "Location estimator densities for " * secStr * " return data")
 	kernelPlot = plot(layerVec..., Guide.xlabel("Estimator value (basis points)"), Guide.ylabel("Density"), Guide.title(localTitle), Guide.manual_color_key(default_legend(["Mean", "Trimmed mean (0.4)"])...), defaultThemeOverride)
 end
 
@@ -388,9 +386,155 @@ end
 port_value_update(p::Float64, r::Float64) = p * (r + 1)
 port_value_update(p::Vector{Float64}, r::Vector{Float64}) = (length(p) == length(r)) ? sum(Float64[ port_value_update(p[j], r[j]) for j = 1:length(p) ]) : error("Length mismatch")
 port_value_update(p::Float64, r::Vector{Float64}) = port_value_update((p/length(r))*ones(Float64, length(r)), r)
+
+
+
 #-------------------------------------------
-#
+# ASYMMETRIC DISTRIBUTIONS IN FINANCIAL RETURNS
 #-------------------------------------------
+function asymmetric_distribution_effect( ; blockLength::Float64=5.0, numResample::Int=1000, varProxyMethod::Symbol=:historicvariance, numObs::Int=2000, rSquared::Float64=0.05, a::Float64=0.0, lag::Int=17, numAsset::Int=20, tradingSimRSquared::Float64=0.01, includeConstantInSim::Bool=true)
+	#Get robust measure of return data and compare it to Normal and t-Dist with 2 DoF
+	secRet = read_local(secList, :return)
+    robustSkew = Float64[ robust_skew(secRet[j]) for j = 1:length(secList) ]
+	logNormalRobustSkew = mean(Float64[ robust_skew(rand(LogNormal(0, 1), 100)) for k = 1:1000 ])
+	println("Drawing plot 1")
+	estPlot1 = plot(x=secList, y=robustSkew, yintercept=[0.0, logNormalRobustSkew], Geom.point, Geom.hline, Guide.xlabel("Ticker code"), Guide.ylabel("Robust skewness"), defaultThemeOverride)
+    draw_local(estPlot1, "Robust_Skewness_of_Daily_Financial_Returns", dirPath=outputDir, fileType=:svg)
+	#Compare mean and trimmed mean on resampled financial returns (use WOW (Largest right skew) and ANZ (Largest left skew))
+	println("Drawing mean comparison plots (full period)")
+	pWOWFull = kernel_plot_robust_mean_versus_trimmed_mean(secRet, "WOW", blockLength=blockLength)
+	draw_local(pWOWFull, "WOW_Bootstrapped_Location_Estimator_Density_(full_period)", dirPath=outputDir, fileType=:svg)
+	pANZFull = kernel_plot_robust_mean_versus_trimmed_mean(secRet, "ANZ", blockLength=blockLength)
+	draw_local(pANZFull, "ANZ_Bootstrapped_Location_Estimator_Density_(full_period)", dirPath=outputDir, fileType=:svg)
+	#Compare mean and trimmed mean on log-normal data
+	kPlotLN = kernel_plot_robust_mean_versus_trimmed_mean(rand(LogNormal(0, 1), 100), bpMult=1, blockLength=1.0)
+	draw_local(kPlotLN, "LogNormal_Bootstrapped_Location_Estimator_Density", dirPath=outputDir, fileType=:svg)
+	println("Routine complete")
+end
+
+
+
+
+
+#--------------------------------------------
+# ROBUST FUNCTIONS USED THROUGHOUT
+#--------------------------------------------
+#Number of observations to cut when trimming
+tmean_num_cut{T}(x::AbstractVector{T}, p::Float64) = Int(floor(p*length(x)))
+tmean_num_cut{T}(x::AbstractVector{T}, lp::Float64, up::Float64) = (tmean_num_cut(x, lp), tmean_num_cut(x, up))
+#Trimmed mean
+function tmean!{T}(x::AbstractVector{T}, lp::Float64=0.1, up::Float64=0.1 ; sorted::Bool=false)
+    length(x) < 2 && error("Input must contain at least 2 observations")
+    !(0.0 <= lp <= up) && error("Invalid lower portion")
+	!(lp <= up <= 1.0) && error("Invalid upper portion")
+    (numLower, numUpper) = tmean_num_cut(x, lp, up)
+	!sorted && sort!(x)
+	return(mean(sub(x, numLower+1:length(x)-numUpper)))
+end
+tmean!{T}(x::AbstractVector{T}, p::Float64=0.2 ; sorted::Bool=false) = tmean!(x, p/2, p/2, sorted=sorted)
+tmean{T}(x::AbstractVector{T}, lp::Float64=0.1, up::Float64=0.1 ; sorted::Bool=false) = sorted ? tmean!(x, lp, up, sorted=true) : tmean!(deepcopy(x), lp, up, sorted=false)
+tmean{T}(x::AbstractVector{T}, p::Float64=0.2 ; sorted::Bool=false) = tmean(x, p/2, p/2, sorted=sorted)
+#Median when input is already sorted
+function median_sorted{T}(x::AbstractVector{T})
+    length(x) < 2 && error("Input must contain at least 2 observations")
+    if iseven(length(x))
+        i = Int(length(x)/2)
+        return(mean(x[i:i+1]))
+    else
+        return(x[Int((length(x)+1)/2)])
+    end
+end
+#Hogg's robust measure of tail-fatness.
+function hogg_robust_kurt!{T}(x::Vector{T} ; sorted::Bool=false, numerTail::Float64=0.05, denomTail::Float64=0.5)
+    length(x) < 10 && error("Input must contain at least 10 observations")
+    !(0.0 < numerTail <= 0.2) && error("Non-sensible value for numerTail")
+    !(0.3 < denomTail <= 0.5) && error("Non-sensible value for denomTail")
+    numObsNumer = Int(ceil(numerTail * length(x)))
+    numObsDenom = Int(ceil(denomTail * length(x)))
+    !sorted && sort!(x)
+    numerLeft = mean(sub(x, 1:numObsNumer))
+    numerRight = mean(sub(x, length(x)-numObsNumer+1:length(x)))
+    denomLeft = mean(sub(x, 1:numObsDenom))
+    denomRight = mean(sub(x, length(x)-numObsDenom+1:length(x)))
+    return((numerRight - numerLeft) / (denomRight - denomLeft))
+end
+hogg_robust_kurt{T}(x::Vector{T} ; sorted::Bool=false, numerTail::Float64=0.05, denomTail::Float64=0.5) = sorted ? hogg_robust_kurt!(x, sorted=true, numerTail=numerTail, denomTail=denomTail) : hogg_robust_kurt!(deepcopy(x), sorted=false, numerTail=numerTail, denomTail=denomTail)
+#Robust skewness
+function robust_skew{T<:Number}(x::Vector{T}; qProb::Float64=0.75)
+	length(x) < 3 && error("Input must contain at least 10 observations")
+	!(0.5 < qProb < 1.0) && error("Invalid quantile for robust skew procedure")
+	qEst = quantile(x, Float64[1 - qProb, 0.5, qProb])
+	return((qEst[3] + qEst[1] - 2*qEst[2]) / (qEst[3] - qEst[1]))
+end
+
+
+#--------------------------------------------
+# ROLLING WINDOW HISTORICAL VARIANCE
+#--------------------------------------------
+historical_variance{T<:Number}(r::AbstractVector{T}, lagWindow::Int=100) = (0 < lagWindow < length(r)) ? Float64[ var(sub(r, n-lagWindow+1:n)) for n = lagWindow:length(r) ] : error("Invalid lagWindow")
+
+
+
+#--------------------------------------------
+# DATA READING FUNCTIONS USED THROUGHOUT
+#--------------------------------------------
+function read_local(secList::Vector{ASCIIString}, dataType::Symbol ; checkLength::Int=0)
+    if dataType == :return
+        x = Vector{Float64}[ vec(readcsv(dataDir*"ASX_"*secList[j]*"_Return-Trade_uMarketCloseAuction_Bow.csv", Float64)) for j = 1:length(secList) ]
+    elseif dataType == :realisedvariance
+        x = Vector{Float64}[ vec(readcsv(dataDir*"ASX_"*secList[j]*"_RealisedVariance-5Minute-BidAskMidpoint_uFirstToLast_Bow.csv", Float64)) for j = 1:length(secList) ]
+    else
+        error("Invalid data type")
+    end
+    if checkLength != 0
+        any(Int[ length(x[j]) for j = 1:length(x) ] .!= checkLength) && error("Invalid data length")
+    end
+    return(x)
+end
+function read_local(dataType::Symbol)
+    if dataType == :calendar
+        x = vec(readcsv(dataDir*"Calendar.csv", DateTime))
+    else
+        error("Invalid data type")
+    end
+    return(x)
+end
+
+
+#--------------------------------------------
+# PLOTTING FUNCTIONS USED THROUGHOUT
+#--------------------------------------------
+#Function for drawing plot to saved image file
+function draw_local(p::Plot, fileName::ASCIIString ; dirPath::ASCIIString="", fileType::Symbol=:png, width::Measure=40cm, height::Measure=20cm)
+	dirPath[end] != '/' && (dirPath = dirPath * "/")
+    !isdir(dirPath) && error("Input directory does not exist")
+    filePath = dirPath * fileName * "." * string(fileType)
+    if fileType == :svg     ; draw(SVG(filePath, width, height), p)
+	elseif fileType == :png ; draw(PNG(filePath, width, height), p)
+	elseif fileType == :pdf ; draw(PDF(filePath, width, height), p)
+	else                    ; error("Invalid fileType symbol")
+	end
+	return(filePath)
+end
+function adjust_default_theme_color(x::Theme, colourString::ASCIIString)
+    xC = deepcopy(x)
+    xC.default_color = parse(Compose.Colorant, colourString)
+    return(xC)
+end
+function default_legend(legendLabel::Vector{ASCIIString})
+	legendTitle = "Legend:"
+    length(legendLabel) > length(colourVec) && error("Default legend function cannot handle more than " * string(length(colourVec)) * " series")
+    return(legendTitle, legendLabel, deepcopy(colourVec[1:length(legendLabel)]))
+end
+
+#--------------------------------------------
+# OTHER COMMON FUNCTIONS
+#--------------------------------------------
+arr_to_mat{T}(x::Vector{Vector{T}}) = T[ x[j][k] for j = 1:length(x), k = 1:length(x[1])]
+mat_to_arr{T}(x::Matrix{T}) = Vector{T}[ x[:, j] for j = 1:size(x, 2) ]
+julia_version_dir() = "v"*string(VERSION.major)*"."*string(VERSION.minor)
+
+
 
 
 
